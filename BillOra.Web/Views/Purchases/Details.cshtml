@@ -1,0 +1,32 @@
+@model Purchase
+@{ ViewData["Title"] = "GRN " + Model.InvoiceNumber; }
+
+<h3 class="mb-4">GRN @Model.InvoiceNumber</h3>
+<div class="bo-card mb-3">
+    <p><strong>Vendor:</strong> @Model.Vendor?.Name</p>
+    <p><strong>Date:</strong> @Model.PurchaseDate.ToLocalTime().ToString("dd MMM yyyy hh:mm tt")</p>
+</div>
+<div class="bo-card">
+    <table class="table">
+        <thead><tr><th>Item</th><th class="text-end">Qty</th><th class="text-end">Unit Price</th><th class="text-end">Discount</th><th class="text-end">GST%</th><th class="text-end">Line Total</th></tr></thead>
+        <tbody>
+        @foreach (var line in Model.PurchaseItems)
+        {
+            <tr>
+                <td>@line.Item?.Name</td>
+                <td class="text-end">@line.Quantity</td>
+                <td class="text-end">₹@line.UnitPrice.ToString("N2")</td>
+                <td class="text-end">₹@line.Discount.ToString("N2")</td>
+                <td class="text-end">@line.GstPercent%</td>
+                <td class="text-end">₹@line.LineTotal.ToString("N2")</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+    <div class="text-end">
+        <p>Subtotal: ₹@Model.SubTotal.ToString("N2")</p>
+        <p>Discount: ₹@Model.DiscountAmount.ToString("N2")</p>
+        <p>Tax: ₹@Model.TaxAmount.ToString("N2")</p>
+        <h5>Grand Total: ₹@Model.GrandTotal.ToString("N2")</h5>
+    </div>
+</div>

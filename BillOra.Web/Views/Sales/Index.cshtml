@@ -1,0 +1,32 @@
+@model List<Sale>
+@{ ViewData["Title"] = "Sales Details"; }
+
+<h3 class="mb-4">Sales Details</h3>
+
+<div class="bo-card mb-3">
+    <form method="get" class="row g-2">
+        <div class="col-md-3"><label class="form-label small">From</label><input type="date" name="from" value="@ViewBag.From" class="form-control form-control-sm" /></div>
+        <div class="col-md-3"><label class="form-label small">To</label><input type="date" name="to" value="@ViewBag.To" class="form-control form-control-sm" /></div>
+        <div class="col-md-3"><label class="form-label small">Customer</label><input name="customer" value="@ViewBag.Customer" class="form-control form-control-sm" placeholder="Customer name" /></div>
+        <div class="col-md-3"><label class="form-label small">Invoice #</label><input name="invoiceNumber" value="@ViewBag.InvoiceNumber" class="form-control form-control-sm" placeholder="e.g. INV-..." /></div>
+        <div class="col-12"><button class="btn btn-sm btn-primary">Search</button></div>
+    </form>
+</div>
+
+<div class="bo-card">
+    <table class="table align-middle">
+        <thead><tr><th>Invoice</th><th>Customer</th><th>Date</th><th class="text-end">Total</th><th class="text-end">Actions</th></tr></thead>
+        <tbody>
+        @foreach (var s in Model)
+        {
+            <tr>
+                <td>@s.InvoiceNumber</td>
+                <td>@(s.Customer?.Name ?? "Walk-in")</td>
+                <td>@s.SaleDate.ToLocalTime().ToString("dd MMM yyyy hh:mm tt")</td>
+                <td class="text-end">₹@s.GrandTotal.ToString("N2")</td>
+                <td class="text-end"><a class="btn btn-sm btn-outline-secondary" href="/Sales/Details/@s.Id">View</a></td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>

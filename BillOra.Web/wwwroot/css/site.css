@@ -1,0 +1,130 @@
+:root {
+  --bo-primary: #4f46e5;
+  --bo-primary-dark: #3730a3;
+  --bo-primary-light: #eef2ff;
+  --bo-bg: #f5f6fb;
+  --bo-border: #e5e7eb;
+  --bo-text-muted: #6b7280;
+  --bo-radius: 14px;
+  --bo-radius-sm: 10px;
+}
+
+* { -webkit-tap-highlight-color: transparent; }
+
+html, body { height: 100%; }
+body {
+  background: var(--bo-bg);
+  font-size: 15px;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---------- Navigation ---------- */
+.navbar { padding: .6rem 1rem; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+.navbar-brand { font-weight: 700; letter-spacing: .3px; font-size: 1.15rem; }
+.navbar .nav-link {
+  font-weight: 500;
+  border-radius: 8px;
+  padding: .5rem .85rem !important;
+  transition: background .15s ease;
+}
+.navbar .nav-link:hover, .navbar .nav-link:focus { background: rgba(255,255,255,.15); }
+
+/* ---------- Cards ---------- */
+.bo-card {
+  background: #fff;
+  border-radius: var(--bo-radius);
+  box-shadow: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+  padding: 1.25rem;
+  border: 1px solid rgba(0,0,0,.03);
+}
+
+.bo-stat-value { font-size: 1.65rem; font-weight: 700; line-height: 1.2; }
+.bo-stat-label { color: var(--bo-text-muted); font-size: .78rem; text-transform: uppercase; letter-spacing: .05em; font-weight: 600; }
+
+/* ---------- Buttons: touch-friendly everywhere ---------- */
+.btn { border-radius: 10px; font-weight: 500; }
+.btn-primary { background-color: var(--bo-primary); border-color: var(--bo-primary); }
+.btn-primary:hover, .btn-primary:focus { background-color: var(--bo-primary-dark); border-color: var(--bo-primary-dark); }
+.btn-lg { min-height: 52px; font-weight: 600; }
+.btn:not(.btn-sm) { min-height: 42px; }
+
+/* ---------- Forms ---------- */
+.form-control, .form-select { border-radius: 9px; border-color: var(--bo-border); }
+.form-control:focus, .form-select:focus { border-color: var(--bo-primary); box-shadow: 0 0 0 .2rem rgba(79,70,229,.12); }
+.form-control:not(.form-control-sm), .form-select:not(.form-select-sm) { min-height: 44px; }
+
+/* ---------- Tables ---------- */
+.table { font-size: .92rem; }
+.table thead th { font-size: .75rem; text-transform: uppercase; letter-spacing: .04em; color: var(--bo-text-muted); border-bottom-width: 1px; }
+
+/* ---------- POS ---------- */
+.pos-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 1rem; align-items: start; }
+.pos-item-card {
+  cursor: pointer;
+  border: 1px solid var(--bo-border);
+  border-radius: var(--bo-radius-sm);
+  padding: .65rem;
+  background: #fff;
+  transition: box-shadow .15s ease, border-color .15s ease, transform .1s ease;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.pos-item-card:hover { box-shadow: 0 4px 14px rgba(79,70,229,.16); border-color: var(--bo-primary); }
+.pos-item-card:active { transform: scale(.97); }
+
+.pos-item-thumb {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border-radius: 8px;
+  margin-bottom: .4rem;
+  background: #f0f1f6;
+}
+.pos-item-thumb-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #c7c9d9;
+  font-size: 1.4rem;
+}
+
+.pos-cart-line { border-bottom: 1px solid #f0f0f4; padding: .55rem 0; }
+
+/* ---------- Mobile-first overrides ---------- */
+@media (max-width: 991px) {
+  .pos-grid { grid-template-columns: 1fr; }
+
+  /* Cart panel becomes a sticky bottom sheet-style block on phones/tablets
+     so the item grid stays scrollable above it without losing the totals. */
+  .pos-grid > div:last-child { position: sticky; bottom: 0; z-index: 20; }
+  .pos-grid .bo-card { box-shadow: 0 -4px 16px rgba(0,0,0,.1); }
+}
+
+@media (max-width: 576px) {
+  main .container-fluid { padding-left: .65rem; padding-right: .65rem; }
+  .bo-card { padding: 1rem; border-radius: 12px; }
+  .bo-stat-value { font-size: 1.4rem; }
+  h3 { font-size: 1.3rem; }
+
+  /* Buttons and inputs get a bit taller for thumbs on small screens */
+  .btn:not(.btn-sm) { min-height: 46px; }
+
+  /* Tables that would overflow horizontally get a scroll container instead
+     of squeezing text illegibly small. */
+  .table-responsive-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+  .navbar-brand { font-size: 1.05rem; }
+}
+
+/* Offcanvas-style mobile nav gets comfortable tap targets */
+@media (max-width: 991px) {
+  .navbar-collapse .nav-link { padding: .75rem 1rem !important; border-bottom: 1px solid rgba(255,255,255,.08); }
+}
+
+/* ---------- Badges ---------- */
+.badge { font-weight: 600; padding: .4em .65em; border-radius: 7px; }
+
+/* ---------- Modal polish ---------- */
+.modal-content { border-radius: var(--bo-radius); border: none; }
+.modal-header { border-bottom: 1px solid var(--bo-border); }
+.modal-footer { border-top: 1px solid var(--bo-border); }

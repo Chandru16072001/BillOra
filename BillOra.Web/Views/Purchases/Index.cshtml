@@ -1,0 +1,25 @@
+@model List<Purchase>
+@{ ViewData["Title"] = "GRN / Purchases"; }
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h3>GRN Entries (Goods Receipt)</h3>
+    <a class="btn btn-primary" href="/Purchases/Create"><i class="fa-solid fa-plus"></i> New GRN</a>
+</div>
+
+<div class="bo-card">
+    <table class="table align-middle">
+        <thead><tr><th>GRN No.</th><th>Vendor</th><th>Date</th><th class="text-end">Total</th><th class="text-end">Actions</th></tr></thead>
+        <tbody>
+        @foreach (var p in Model)
+        {
+            <tr>
+                <td>@p.InvoiceNumber</td>
+                <td>@(p.Vendor?.Name ?? "-")</td>
+                <td>@p.PurchaseDate.ToLocalTime().ToString("dd MMM yyyy hh:mm tt")</td>
+                <td class="text-end">₹@p.GrandTotal.ToString("N2")</td>
+                <td class="text-end"><a class="btn btn-sm btn-outline-secondary" href="/Purchases/Details/@p.Id">View</a></td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>

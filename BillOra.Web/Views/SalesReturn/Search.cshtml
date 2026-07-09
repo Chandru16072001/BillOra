@@ -1,0 +1,131 @@
+@{
+    ViewData["Title"] = "Sales Return";
+}
+@Html.AntiForgeryToken()
+
+<h3 class="mb-4">Sales Return</h3>
+
+<div class="bo-card mb-3" style="max-width:500px;">
+    <label class="form-label">Invoice Number</label>
+    <div class="d-flex gap-2">
+        <input id="invoiceSearch" class="form-control" placeholder="e.g. INV-202607-0001" />
+        <button class="btn btn-primary" onclick="findInvoice()">Search</button>
+    </div>
+    <div id="searchError" class="text-danger small mt-2"></div>
+</div>
+
+<div id="returnPanel" class="bo-card" style="display:none;">
+    <h5 id="invoiceHeader"></h5>
+    <p class="text-muted" id="invoiceMeta"></p>
+
+    <table class="table table-sm">
+        <thead><tr><th></th><th>Item</th><th class="text-end">Sold Qty</th><th class="text-end">Already Returned</th><th class="text-end">Return Qty</th><th class="text-end">Refund</th></tr></thead>
+        <tbody id="returnLines"></tbody>
+    </table>
+
+    <div class="row g-3 mt-2">
+        <div class="col-md-6">
+            <label class="form-label">Return Reason</label>
+            <input id="returnReason" class="form-control" placeholder="e.g. wrong size, damaged, customer changed mind" />
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">Load Stock Back?</label>
+            <select id="loadStock" class="form-select">
+                <option value="true">Yes - add returned quantity back to inventory</option>
+                <option value="false">No - do not restock (damaged/unsellable)</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mt-3">
+        <h5>Total Refund: <span id="totalRefund">₹0.00</span></h5>
+        <button class="btn btn-primary btn-lg" onclick="submitReturn()"><i class="fa-solid fa-rotate-left"></i> Process Return</button>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+let currentSale = null;
+
+async function findInvoice() {
+    const invoiceNumber = document.getElementById('invoiceSearch').value.trim();
+    document.getElementById('searchError').innerText = '';
+    if (!invoiceNumber) return;
+
+    const res = await fetch('/SalesReturn/FindInvoice?invoiceNumber=' + encodeURIComponent(invoiceNumber));
+    if (!res.ok) {
+        document.getElementById('searchError').innerText = 'No invoice found with that number.';
+        document.getElementById('returnPanel').style.display = 'none';
+        return;
+    }
+    currentSale = await res.json();
+    renderReturnPanel();
+}
+
+function renderReturnPanel() {
+    document.getElementById('returnPanel').style.display = 'block';
+    document.getElementById('invoiceHeader').innerText = 'Invoice ' + currentSale.invoiceNumber;
+    document.getElementById('invoiceMeta').innerText = currentSale.customerName + ' — ' + currentSale.saleDate + ' — Total ₹' + currentSale.grandTotal.toFixed(2);
+
+    const tbody = document.getElementById('returnLines');
+    tbody.innerHTML = '';
+    currentSale.lines.forEach(line => {
+        const returnable = line.quantity - line.alreadyReturned;
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><input type="checkbox" class="line-check" data-id="${line.id}" ${returnable <= 0 ? 'disabled' : ''} /></td>
+            <td>${line.itemName}</td>
+            <td class="text-end">${line.quantity}</td>
+            <td class="text-end">${line.alreadyReturned}</td>
+            <td class="text-end"><input type="number" min="0" max="${returnable}" step="0.01" value="0" class="form-control form-control-sm qty-input" style="width:80px" data-id="${line.id}" data-price="${line.unitPrice}" data-gst="${line.gstPercent}" ${returnable <= 0 ? 'disabled' : ''} oninput="recalc()" /></td>
+            <td class="text-end line-refund" data-id="${line.id}">₹0.00</td>`;
+        tbody.appendChild(tr);
+    });
+    recalc();
+}
+
+function recalc() {
+    let total = 0;
+    document.querySelectorAll('.qty-input').forEach(input => {
+        const qty = parseFloat(input.value) || 0;
+        const price = parseFloat(input.dataset.price);
+        const gst = parseFloat(input.dataset.gst);
+        const refund = qty * price * (1 + gst / 100);
+        total += refund;
+        document.querySelector(`.line-refund[data-id="${input.dataset.id}"]`).innerText = '₹' + refund.toFixed(2);
+    });
+    document.getElementById('totalRefund').innerText = '₹' + total.toFixed(2);
+}
+
+async function submitReturn() {
+    const lines = [];
+    document.querySelectorAll('.qty-input').forEach(input => {
+        const qty = parseFloat(input.value) || 0;
+        if (qty > 0) lines.push({ saleItemId: parseInt(input.dataset.id), returnQuantity: qty });
+    });
+
+    if (lines.length === 0) { alert('Enter a return quantity for at least one item.'); return; }
+
+    const payload = {
+        saleId: currentSale.id,
+        returnReason: document.getElementById('returnReason').value,
+        loadStock: document.getElementById('loadStock').value === 'true',
+        lines: lines
+    };
+
+    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+    const res = await fetch('/SalesReturn/Create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token || '' },
+        body: JSON.stringify(payload)
+    });
+
+    if (res.ok) {
+        const result = await res.json();
+        window.location.href = '/SalesReturn/Details/' + result.salesReturnId;
+    } else {
+        alert('Could not process the return. ' + (await res.text()));
+    }
+}
+</script>
+}

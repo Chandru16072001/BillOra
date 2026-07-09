@@ -1,0 +1,65 @@
+@{
+    ViewData["Title"] = "Dashboard";
+}
+<h3 class="mb-4">Dashboard</h3>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-3 col-6">
+        <div class="bo-card">
+            <div class="bo-stat-label">Today's Sales</div>
+            <div class="bo-stat-value">₹@ViewBag.TodaySalesTotal.ToString("N2")</div>
+            <div class="text-muted small">@ViewBag.TodayBillCount bills</div>
+        </div>
+    </div>
+    <div class="col-md-3 col-6">
+        <div class="bo-card">
+            <div class="bo-stat-label">Monthly Sales</div>
+            <div class="bo-stat-value">₹@ViewBag.MonthSalesTotal.ToString("N2")</div>
+        </div>
+    </div>
+    <div class="col-md-3 col-6">
+        <div class="bo-card">
+            <div class="bo-stat-label">Low Stock Items</div>
+            <div class="bo-stat-value text-warning">@ViewBag.LowStockCount</div>
+        </div>
+    </div>
+    <div class="col-md-3 col-6">
+        <div class="bo-card">
+            <div class="bo-stat-label">Out of Stock</div>
+            <div class="bo-stat-value text-danger">@ViewBag.OutOfStockCount</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-6 col-6">
+        <div class="bo-card">
+            <div class="bo-stat-label">Active Items</div>
+            <div class="bo-stat-value">@ViewBag.ItemCount</div>
+        </div>
+    </div>
+    <div class="col-md-6 col-6">
+        <div class="bo-card">
+            <div class="bo-stat-label">Customers</div>
+            <div class="bo-stat-value">@ViewBag.CustomerCount</div>
+        </div>
+    </div>
+</div>
+
+<div class="bo-card">
+    <h5>Recent Bills</h5>
+    <table class="table table-sm mt-3">
+        <thead><tr><th>Invoice</th><th>Customer</th><th>Date</th><th class="text-end">Total</th></tr></thead>
+        <tbody>
+        @foreach (var s in (IEnumerable<BillOra.Domain.Entities.Sale>)ViewBag.RecentSales)
+        {
+            <tr>
+                <td>@s.InvoiceNumber</td>
+                <td>@(s.Customer?.Name ?? "Walk-in")</td>
+                <td>@s.SaleDate.ToLocalTime().ToString("dd MMM, hh:mm tt")</td>
+                <td class="text-end">₹@s.GrandTotal.ToString("N2")</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>

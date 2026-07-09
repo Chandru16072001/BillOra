@@ -1,0 +1,183 @@
+@using BillOra.Domain.Enums
+@{
+    ViewData["Title"] = "Settings";
+    var store = (Store)ViewBag.Store;
+    var taxes = (IEnumerable<Tax>)ViewBag.Taxes;
+    var paymentModes = (IEnumerable<PaymentMode>)ViewBag.PaymentModes;
+    var printerSettings = (IEnumerable<PrinterSetting>)ViewBag.PrinterSettings;
+    var emailSettings = (EmailSettings?)ViewBag.EmailSettings;
+}
+
+<h3 class="mb-4">Settings</h3>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success py-2">@TempData["Success"]</div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger py-2">@TempData["Error"]</div>
+}
+
+<div class="row g-3">
+    <div class="col-md-6">
+        <div class="bo-card mb-3">
+            <h5>GST Configuration</h5>
+            <p class="text-muted small">When disabled, GST calculation disappears entirely from billing for this store.</p>
+            <form asp-action="ToggleGst" method="post">
+                <button class="btn @(store.GstEnabled ? "btn-success" : "btn-outline-secondary")" type="submit">
+                    GST is currently <strong>@(store.GstEnabled ? "ENABLED" : "DISABLED")</strong> — click to toggle
+                </button>
+            </form>
+        </div>
+
+        <div class="bo-card mb-3">
+            <h5>Tax Slabs</h5>
+            <form asp-action="AddTax" method="post" class="row g-2 mb-3">
+                <div class="col-6"><input name="name" class="form-control form-control-sm" placeholder="e.g. GST 18%" required /></div>
+                <div class="col-4"><input name="percentage" type="number" step="0.01" class="form-control form-control-sm" placeholder="%" required /></div>
+                <div class="col-2"><button class="btn btn-sm btn-primary w-100">Add</button></div>
+            </form>
+            <table class="table table-sm">
+                <tbody>
+                @foreach (var t in taxes)
+                {
+                    <tr>
+                        <td>@t.Name</td>
+                        <td>@t.Percentage%</td>
+                        <td class="text-end">
+                            <form asp-action="DeleteTax" asp-route-id="@t.Id" method="post" class="d-inline">
+                                <button class="btn btn-sm btn-outline-danger">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="bo-card">
+            <h5>Payment Modes</h5>
+            <form asp-action="AddPaymentMode" method="post" class="row g-2 mb-3">
+                <div class="col-8"><input name="name" class="form-control form-control-sm" placeholder="e.g. Paytm Wallet" required /></div>
+                <div class="col-4"><button class="btn btn-sm btn-primary w-100">Add</button></div>
+            </form>
+            <table class="table table-sm">
+                <tbody>
+                @foreach (var p in paymentModes)
+                {
+                    <tr>
+                        <td>@p.Name @(p.IsCustom ? "" : "(default)")</td>
+                        <td class="text-end">
+                            @if (p.IsCustom)
+                            {
+                                <form asp-action="DeletePaymentMode" asp-route-id="@p.Id" method="post" class="d-inline">
+                                    <button class="btn btn-sm btn-outline-danger">Delete</button>
+                                </form>
+                            }
+                        </td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="bo-card mb-3">
+            <h5>Printer Configuration</h5>
+            <p class="text-muted small">Set up Thermal (58mm/80mm) or A4 invoice printing. Mark one as default — that's what <code>/POS/Print</code> uses.</p>
+            <form asp-action="SavePrinterSetting" method="post" class="row g-2 mb-4">
+                <div class="col-6">
+                    <label class="form-label small">Printer Type</label>
+                    <select name="type" class="form-select form-select-sm">
+                        <option value="@PrinterType.Thermal80mm">Thermal 80mm</option>
+                        <option value="@PrinterType.Thermal58mm">Thermal 58mm</option>
+                        <option value="@PrinterType.A4">A4</option>
+                    </select>
+                </div>
+                <div class="col-6">
+                    <label class="form-label small">Paper Size</label>
+                    <input name="paperSize" class="form-control form-control-sm" placeholder="e.g. 80mm or A4" />
+                </div>
+                <div class="col-6">
+                    <label class="form-label small">Copies</label>
+                    <input name="copies" type="number" min="1" value="1" class="form-control form-control-sm" />
+                </div>
+                <div class="col-6">
+                    <label class="form-label small">Footer Message</label>
+                    <input name="footerMessage" class="form-control form-control-sm" placeholder="Thank you for shopping!" />
+                </div>
+                <div class="col-12">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="isDefault" value="true" id="isDefault" />
+                        <label class="form-check-label" for="isDefault">Set as default</label>
+                    </div>
+                </div>
+                <div class="col-12"><button class="btn btn-sm btn-primary">Save Printer Setting</button></div>
+            </form>
+
+            <table class="table table-sm">
+                <thead><tr><th>Type</th><th>Paper Size</th><th>Copies</th><th>Default</th></tr></thead>
+                <tbody>
+                @foreach (var p in printerSettings)
+                {
+                    <tr>
+                        <td>@p.Type</td>
+                        <td>@p.PaperSize</td>
+                        <td>@p.Copies</td>
+                        <td>@(p.IsDefault ? "✓" : "")</td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="bo-card">
+            <h5><i class="fa-solid fa-envelope"></i> Email Configuration</h5>
+            <p class="text-muted small">Configure your store's SMTP account to automatically email invoices to customers after checkout. Works with Gmail (use an <a href="https://myaccount.google.com/apppasswords" target="_blank" rel="noopener">App Password</a>, not your normal password), Outlook, or any SMTP provider.</p>
+
+            <form asp-action="SaveEmailSettings" method="post" class="row g-2 mb-3">
+                <div class="col-12">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="autoEmailEnabled" value="true" id="autoEmailEnabled" checked="@(emailSettings?.AutoEmailEnabled == true)" />
+                        <label class="form-check-label fw-semibold" for="autoEmailEnabled">Enable automatic invoice emailing</label>
+                    </div>
+                </div>
+                <div class="col-8">
+                    <label class="form-label small">SMTP Host</label>
+                    <input name="smtpHost" class="form-control form-control-sm" value="@emailSettings?.SmtpHost" placeholder="smtp.gmail.com" />
+                </div>
+                <div class="col-4">
+                    <label class="form-label small">Port</label>
+                    <input name="smtpPort" type="number" class="form-control form-control-sm" value="@(emailSettings?.SmtpPort ?? 587)" />
+                </div>
+                <div class="col-12">
+                    <label class="form-label small">SMTP Username / Email</label>
+                    <input name="smtpUsername" class="form-control form-control-sm" value="@emailSettings?.SmtpUsername" placeholder="you@yourstore.com" />
+                </div>
+                <div class="col-12">
+                    <label class="form-label small">SMTP Password / App Password</label>
+                    <input name="smtpPassword" type="password" class="form-control form-control-sm" placeholder="@(emailSettings != null && !string.IsNullOrEmpty(emailSettings.SmtpPasswordEncrypted) ? "•••••••• (leave blank to keep current)" : "Enter password")" />
+                </div>
+                <div class="col-8">
+                    <label class="form-label small">From Name</label>
+                    <input name="fromName" class="form-control form-control-sm" value="@emailSettings?.FromName" placeholder="Your Store Name" />
+                </div>
+                <div class="col-4 d-flex align-items-end">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="useSsl" value="true" id="useSsl" checked="@(emailSettings?.UseSsl ?? true)" />
+                        <label class="form-check-label small" for="useSsl">Use SSL/TLS</label>
+                    </div>
+                </div>
+                <div class="col-12"><button class="btn btn-sm btn-primary">Save Email Configuration</button></div>
+            </form>
+
+            <hr />
+            <form asp-action="SendTestEmail" method="post" class="row g-2">
+                <div class="col-8"><input name="testRecipient" type="email" class="form-control form-control-sm" placeholder="Send a test email to..." /></div>
+                <div class="col-4"><button class="btn btn-sm btn-outline-secondary w-100">Send Test</button></div>
+            </form>
+        </div>
+    </div>
+</div>

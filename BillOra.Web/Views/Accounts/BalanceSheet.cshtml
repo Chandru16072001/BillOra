@@ -1,0 +1,71 @@
+@{
+    ViewData["Title"] = "Balance Sheet";
+    decimal totalCredits = ViewBag.TotalCredits;
+    decimal totalDebits = ViewBag.TotalDebits;
+    decimal currentBalance = ViewBag.CurrentBalance;
+    var creditsByCategory = (IEnumerable<dynamic>)ViewBag.CreditsByCategory;
+    var debitsByCategory = (IEnumerable<dynamic>)ViewBag.DebitsByCategory;
+}
+
+<h3 class="mb-4">Balance Sheet</h3>
+
+<div class="bo-card mb-3">
+    <form method="get" class="row g-2">
+        <div class="col-md-3"><label class="form-label small">From</label><input type="date" name="from" value="@ViewBag.From" class="form-control form-control-sm" /></div>
+        <div class="col-md-3"><label class="form-label small">To</label><input type="date" name="to" value="@ViewBag.To" class="form-control form-control-sm" /></div>
+        <div class="col-md-3 d-flex align-items-end"><button class="btn btn-sm btn-primary w-100">Apply</button></div>
+    </form>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="bo-card text-center">
+            <div class="bo-stat-label">Total Credits</div>
+            <div class="bo-stat-value text-success">₹@totalCredits.ToString("N2")</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="bo-card text-center">
+            <div class="bo-stat-label">Total Debits</div>
+            <div class="bo-stat-value text-danger">₹@totalDebits.ToString("N2")</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="bo-card text-center">
+            <div class="bo-stat-label">Current Balance / P&amp;L</div>
+            <div class="bo-stat-value @(currentBalance >= 0 ? "text-success" : "text-danger")">₹@currentBalance.ToString("N2")</div>
+            <div class="text-muted small">@(currentBalance >= 0 ? "Profit" : "Loss")</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-md-6">
+        <div class="bo-card">
+            <h5 class="text-success">Credits</h5>
+            <table class="table table-sm">
+                <tbody>
+                @foreach (var c in creditsByCategory)
+                {
+                    <tr><td>@c.Category</td><td class="text-end">₹@(((decimal)c.Total).ToString("N2"))</td></tr>
+                }
+                </tbody>
+                <tfoot><tr class="fw-bold"><td>Total</td><td class="text-end">₹@totalCredits.ToString("N2")</td></tr></tfoot>
+            </table>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="bo-card">
+            <h5 class="text-danger">Debits</h5>
+            <table class="table table-sm">
+                <tbody>
+                @foreach (var d in debitsByCategory)
+                {
+                    <tr><td>@d.Category</td><td class="text-end">₹@(((decimal)d.Total).ToString("N2"))</td></tr>
+                }
+                </tbody>
+                <tfoot><tr class="fw-bold"><td>Total</td><td class="text-end">₹@totalDebits.ToString("N2")</td></tr></tfoot>
+            </table>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,84 @@
+@using BillOra.Domain.Enums
+@model List<AccountTransaction>
+@{ ViewData["Title"] = "Account History"; }
+
+<h3 class="mb-4">Account History</h3>
+
+<div class="bo-card mb-3">
+    <form method="get" class="row g-2">
+        <div class="col-md-2"><label class="form-label small">From</label><input type="date" name="from" value="@ViewBag.From" class="form-control form-control-sm" /></div>
+        <div class="col-md-2"><label class="form-label small">To</label><input type="date" name="to" value="@ViewBag.To" class="form-control form-control-sm" /></div>
+        <div class="col-md-2">
+            <label class="form-label small">Type</label>
+            <select name="type" class="form-select form-select-sm">
+                <option value="">All</option>
+                <option value="@TransactionDirection.Credit">Credit</option>
+                <option value="@TransactionDirection.Debit">Debit</option>
+            </select>
+        </div>
+        <div class="col-md-2"><label class="form-label small">Category</label><input name="category" value="@ViewBag.Category" class="form-control form-control-sm" /></div>
+        <div class="col-md-2"><label class="form-label small">Payment Method</label><input name="paymentMethod" value="@ViewBag.PaymentMethod" class="form-control form-control-sm" /></div>
+        <div class="col-md-2 d-flex align-items-end"><button class="btn btn-sm btn-primary w-100">Filter</button></div>
+    </form>
+    <a class="btn btn-sm btn-outline-success mt-2" href="/Accounts/ExportHistory?@Context.Request.QueryString.Value.TrimStart('?')">
+        <i class="fa-solid fa-file-excel"></i> Export to Excel
+    </a>
+</div>
+
+<div class="bo-card">
+    <table class="table table-sm align-middle">
+        <thead><tr><th>Date</th><th>Name</th><th>Category</th><th>Type</th><th class="text-end">Amount</th><th>Payment</th><th>Source</th><th class="text-end">Actions</th></tr></thead>
+        <tbody>
+        @foreach (var t in Model)
+        {
+            <tr>
+                <td>@t.TransactionDate.ToLocalTime().ToString("dd MMM yyyy hh:mm tt")</td>
+                <td>@t.TransactionName</td>
+                <td>@t.Category</td>
+                <td><span class="badge @(t.Type == TransactionDirection.Credit ? "bg-success" : "bg-danger")">@t.Type</span></td>
+                <td class="text-end">₹@t.Amount.ToString("N2")</td>
+                <td>@t.PaymentMethod</td>
+                <td><span class="badge bg-light text-dark">@(t.SourceModule ?? "Manual")</span></td>
+                <td class="text-end">
+                    @if (t.SourceModule == "Manual")
+                    {
+                        <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#editModal@(t.Id)">Edit</button>
+                        <div class="modal fade" id="editModal@(t.Id)" tabindex="-1">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <form asp-action="EditTransaction" method="post">
+                                        <input type="hidden" name="id" value="@t.Id" />
+                                        <div class="modal-header"><h5 class="modal-title">Edit Transaction</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                                        <div class="modal-body">
+                                            <div class="mb-2"><label class="form-label small">Name</label><input name="transactionName" value="@t.TransactionName" class="form-control" /></div>
+                                            <div class="mb-2"><label class="form-label small">Amount</label><input name="amount" type="number" step="0.01" value="@t.Amount" class="form-control" /></div>
+                                            <div class="mb-2"><label class="form-label small">Category</label><input name="category" value="@t.Category" class="form-control" /></div>
+                                            <div class="mb-2"><label class="form-label small">Reason</label><input name="reason" value="@t.Reason" class="form-control" /></div>
+                                            <div class="mb-2"><label class="form-label small">Notes</label><textarea name="notes" class="form-control">@t.Notes</textarea></div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                                            <button class="btn btn-primary">Save</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </td>
+            </tr>
+        }
+        </tbody>
+        <tfoot>
+            <tr class="fw-bold">
+                <td colspan="4">Totals</td>
+                <td class="text-end">Credit ₹@Model.Where(t => t.Type == TransactionDirection.Credit).Sum(t => t.Amount).ToString("N2") / Debit ₹@Model.Where(t => t.Type == TransactionDirection.Debit).Sum(t => t.Amount).ToString("N2")</td>
+                <td colspan="3"></td>
+            </tr>
+        </tfoot>
+    </table>
+</div>
+
+<script>
+function printHistory() { window.print(); }
+</script>

@@ -1,0 +1,23 @@
+@model List<InventoryTransaction>
+@{
+    ViewData["Title"] = "Stock History";
+    var item = (Item)ViewBag.Item;
+}
+<h3 class="mb-4">Stock History — @item.Name</h3>
+<div class="bo-card">
+    <table class="table table-sm">
+        <thead><tr><th>Type</th><th class="text-end">Qty</th><th class="text-end">Balance After</th><th>Date</th><th>Notes</th></tr></thead>
+        <tbody>
+        @foreach (var t in Model)
+        {
+            <tr>
+                <td>@t.TransactionType</td>
+                <td class="text-end">@t.Quantity</td>
+                <td class="text-end">@t.BalanceAfter</td>
+                <td>@t.TransactionDate.ToLocalTime().ToString("dd MMM yyyy hh:mm tt")</td>
+                <td>@t.Notes</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>

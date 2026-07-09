@@ -1,0 +1,76 @@
+@model List<ItemPrice>
+@{
+    ViewData["Title"] = "Price Master";
+    var items = (IEnumerable<Item>)ViewBag.Items;
+}
+
+<h3 class="mb-4">Price Master</h3>
+<p class="text-muted">Schedule promotional pricing for items — the item's live selling price updates to the discount price automatically when an offer is active.</p>
+
+<div class="bo-card mb-4">
+    <form asp-action="Create" method="post" class="row g-2">
+        <div class="col-md-3">
+            <label class="form-label small">Item</label>
+            <select name="itemId" class="form-select form-select-sm" required>
+                @foreach (var i in items)
+                {
+                    <option value="@i.Id">@i.Name</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label small">Original Price</label>
+            <input name="originalPrice" type="number" step="0.01" class="form-control form-control-sm" required />
+        </div>
+        <div class="col-md-2">
+            <label class="form-label small">Selling Price</label>
+            <input name="sellingPrice" type="number" step="0.01" class="form-control form-control-sm" required />
+        </div>
+        <div class="col-md-2">
+            <label class="form-label small">Discount Price</label>
+            <input name="discountPrice" type="number" step="0.01" class="form-control form-control-sm" />
+        </div>
+        <div class="col-md-2">
+            <label class="form-label small">Offer Start</label>
+            <input name="offerStartDate" type="date" class="form-control form-control-sm" />
+        </div>
+        <div class="col-md-1">
+            <label class="form-label small">Offer End</label>
+            <input name="offerEndDate" type="date" class="form-control form-control-sm" />
+        </div>
+        <div class="col-12 mt-2"><button class="btn btn-primary btn-sm"><i class="fa-solid fa-plus"></i> Add Price Entry</button></div>
+    </form>
+</div>
+
+<div class="bo-card">
+    <table class="table table-sm">
+        <thead><tr><th>Item</th><th class="text-end">Original</th><th class="text-end">Selling</th><th class="text-end">Discount</th><th>Offer Window</th><th>Status</th><th class="text-end">Actions</th></tr></thead>
+        <tbody>
+        @foreach (var p in Model)
+        {
+            <tr>
+                <td>@p.Item?.Name</td>
+                <td class="text-end">₹@p.OriginalPrice.ToString("N2")</td>
+                <td class="text-end">₹@p.SellingPrice.ToString("N2")</td>
+                <td class="text-end">@(p.DiscountPrice.HasValue ? "₹" + p.DiscountPrice.Value.ToString("N2") : "-")</td>
+                <td>
+                    @if (p.OfferStartDate.HasValue || p.OfferEndDate.HasValue)
+                    {
+                        @($"{p.OfferStartDate?.ToString("dd MMM yyyy")} - {p.OfferEndDate?.ToString("dd MMM yyyy")}")
+                    }
+                    else { <span class="text-muted">-</span> }
+                </td>
+                <td>
+                    @if (p.IsCurrentOffer) { <span class="badge bg-success">Offer Live</span> }
+                    else { <span class="badge bg-secondary">Standard</span> }
+                </td>
+                <td class="text-end">
+                    <form asp-action="Delete" asp-route-id="@p.Id" method="post" class="d-inline">
+                        <button class="btn btn-sm btn-outline-danger">Delete</button>
+                    </form>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>

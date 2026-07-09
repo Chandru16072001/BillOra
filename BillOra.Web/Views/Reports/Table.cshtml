@@ -1,0 +1,56 @@
+@using BillOra.Web.Controllers
+@model ReportTableModel
+@{
+    ViewData["Title"] = Model.Title;
+    bool needsDateFilter = ViewBag.From != null || ViewBag.To != null || Model.ReportKey is "SalesReport" or "ItemWiseSalesReport" or "CategoryWiseSalesReport" or "GrnReport" or "PurchaseReport" or "GstReport" or "ProfitLossReport" or "PaymentReport" or "UserActivityReport";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h3 class="mb-0">@Model.Title</h3>
+    <a class="btn btn-sm btn-outline-success" href="/Reports/Export?report=@Model.ReportKey&from=@ViewBag.From&to=@ViewBag.To">
+        <i class="fa-solid fa-file-excel"></i> Export to Excel
+    </a>
+</div>
+
+@if (needsDateFilter)
+{
+    <div class="bo-card mb-3">
+        <form method="get" class="row g-2">
+            <div class="col-md-3"><label class="form-label small">From</label><input type="date" name="from" value="@ViewBag.From" class="form-control form-control-sm" /></div>
+            <div class="col-md-3"><label class="form-label small">To</label><input type="date" name="to" value="@ViewBag.To" class="form-control form-control-sm" /></div>
+            <div class="col-md-3 d-flex align-items-end"><button class="btn btn-sm btn-primary w-100">Apply</button></div>
+        </form>
+    </div>
+}
+
+<div class="bo-card">
+    <div class="table-responsive-wrap">
+        <table class="table table-sm align-middle">
+            <thead>
+                <tr>
+                    @foreach (var h in Model.Headers)
+                    {
+                        <th>@h</th>
+                    }
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Rows.Count == 0)
+                {
+                    <tr><td colspan="@Model.Headers.Length" class="text-muted text-center py-4">No data for the selected filters.</td></tr>
+                }
+                @foreach (var row in Model.Rows)
+                {
+                    <tr>
+                        @foreach (var cell in row)
+                        {
+                            <td>@cell</td>
+                        }
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<a class="btn btn-outline-secondary mt-3" href="/Reports">← Back to Reports</a>

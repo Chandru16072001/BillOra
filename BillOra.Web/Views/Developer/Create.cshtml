@@ -1,0 +1,62 @@
+@{ ViewData["Title"] = "Add Client"; }
+
+<h3 class="mb-4">Add New Client (Tenant)</h3>
+
+<div class="bo-card" style="max-width:640px;">
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div class="alert alert-danger py-2">
+            @foreach (var err in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+            {
+                <div>@err.ErrorMessage</div>
+            }
+        </div>
+    }
+    <form method="post">
+        <h6 class="text-muted">Company</h6>
+        <div class="row g-3 mb-3">
+            <div class="col-md-6">
+                <label class="form-label">Company Name</label>
+                <input name="companyName" class="form-control" required />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Owner Email</label>
+                <input name="ownerEmail" type="email" class="form-control" />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Phone</label>
+                <input name="phone" class="form-control" />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Trial Days</label>
+                <input name="trialDays" type="number" value="14" class="form-control" />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Max Staff Users (licensed seats)</label>
+                <input name="maxStaffUsers" type="number" value="5" min="1" class="form-control" />
+                <div class="form-text">Includes the Store Admin account. The client's Admin cannot create more staff logins than this.</div>
+            </div>
+        </div>
+
+        <h6 class="text-muted">First Store</h6>
+        <div class="mb-3">
+            <label class="form-label">Store Name</label>
+            <input name="storeName" class="form-control" placeholder="Defaults to '{Company Name} Main Store'" />
+        </div>
+
+        <h6 class="text-muted">Store Admin Login</h6>
+        <div class="row g-3 mb-3">
+            <div class="col-md-6">
+                <label class="form-label">Admin Email</label>
+                <input name="adminEmail" type="email" class="form-control" required />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Admin Password</label>
+                <input name="adminPassword" type="text" class="form-control" required />
+            </div>
+        </div>
+
+        <button class="btn btn-primary" type="submit">Create Client</button>
+        <a class="btn btn-outline-secondary" href="/Developer">Cancel</a>
+    </form>
+</div>

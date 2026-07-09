@@ -1,0 +1,43 @@
+@model SalesReturn
+@{
+    Layout = null;
+    var store = (Store)ViewBag.Store;
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Sales Return Receipt @Model.InvoiceNumber</title>
+    <style>
+        body { font-family: 'Courier New', monospace; width: 300px; margin: 0 auto; font-size: 13px; }
+        h2, h4 { text-align: center; margin: 4px 0; }
+        table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+        td, th { padding: 2px 0; }
+        .right { text-align: right; }
+        hr { border-top: 1px dashed #000; }
+    </style>
+</head>
+<body onload="window.print()">
+    <h2>@store.Name</h2>
+    <p style="text-align:center;">Sales Return Receipt</p>
+    <hr />
+    <p>Against Invoice: @Model.InvoiceNumber<br />
+       Date: @Model.ReturnDate.ToLocalTime().ToString("dd MMM yyyy hh:mm tt")<br />
+       Customer: @(Model.Customer?.Name ?? "Walk-in")<br />
+       Reason: @Model.ReturnReason</p>
+    <hr />
+    <table>
+        <thead><tr><th>Item</th><th class="right">Qty</th><th class="right">Refund</th></tr></thead>
+        <tbody>
+        @foreach (var line in Model.Items)
+        {
+            <tr><td>@line.Item?.Name</td><td class="right">@line.ReturnQuantity</td><td class="right">@line.LineRefund.ToString("N2")</td></tr>
+        }
+        </tbody>
+    </table>
+    <hr />
+    <h4>Total Refund: ₹@Model.RefundAmount.ToString("N2")</h4>
+    <hr />
+    <p style="text-align:center;">Load Stock: @(Model.LoadStock ? "Yes" : "No")</p>
+</body>
+</html>

@@ -1,0 +1,197 @@
+@model Sale
+@{
+    ViewData["Title"] = "Modify Invoice " + Model.InvoiceNumber;
+    var items = (IEnumerable<Item>)ViewBag.Items;
+    var paymentModes = (IEnumerable<PaymentMode>)ViewBag.PaymentModes;
+    var customers = (IEnumerable<Customer>)ViewBag.Customers;
+}
+@Html.AntiForgeryToken()
+
+<h3 class="mb-1">Modify Invoice @Model.InvoiceNumber</h3>
+<p class="text-muted">Admin-only. Stock and the Accounts ledger are automatically corrected when you save.</p>
+
+<div class="pos-grid">
+    <div>
+        <div class="bo-card mb-3">
+            <input id="itemSearch" class="form-control form-control-lg" placeholder="Search item to add..." />
+        </div>
+        <div id="itemGrid" class="row g-2">
+            @foreach (var i in items)
+            {
+                <div class="col-6 col-md-4 col-lg-3">
+                    <div class="pos-item-card" onclick="addToCart(@i.Id, '@i.Name.Replace("'", "\\'")', @i.SellingPrice.ToString(System.Globalization.CultureInfo.InvariantCulture), @i.GstPercent.ToString(System.Globalization.CultureInfo.InvariantCulture))">
+                        @if (!string.IsNullOrEmpty(i.ImagePath))
+                        {
+                            <img src="@i.ImagePath" class="pos-item-thumb" alt="@i.Name" />
+                        }
+                        else
+                        {
+                            <div class="pos-item-thumb pos-item-thumb-placeholder"><i class="fa-solid fa-image"></i></div>
+                        }
+                        <div class="fw-semibold">@i.Name</div>
+                        <div class="text-primary fw-bold">₹@i.SellingPrice.ToString("N2")</div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div>
+        <div class="bo-card">
+            <div class="mb-2">
+                <label class="form-label small mb-1">Customer</label>
+                <select id="customerSelect" class="form-select form-select-sm">
+                    <option value="">Walk-in Customer</option>
+                    @foreach (var c in customers)
+                    {
+                        <option value="@c.Id" selected="@(c.Id == Model.CustomerId)">@c.Name</option>
+                    }
+                </select>
+            </div>
+
+            <div id="cartLines" style="max-height:320px; overflow-y:auto;"></div>
+
+            <hr />
+            <div class="d-flex justify-content-between small"><span>Subtotal</span><span id="subTotal">₹0.00</span></div>
+            <div class="d-flex justify-content-between small"><span>GST</span><span id="taxTotal">₹0.00</span></div>
+            <div class="mb-2 mt-2">
+                <label class="form-label small mb-1">Overall Discount (₹)</label>
+                <input id="overallDiscount" type="number" min="0" value="@Model.DiscountAmount" class="form-control form-control-sm" oninput="renderCart()" />
+            </div>
+            <div class="d-flex justify-content-between fw-bold fs-5 mt-2"><span>Total</span><span id="grandTotal">₹0.00</span></div>
+
+            <div class="mb-2 mt-3">
+                <label class="form-label small mb-1">Payment Mode</label>
+                <select id="paymentMode" class="form-select form-select-sm">
+                    @foreach (var p in paymentModes)
+                    {
+                        <option value="@p.Id" selected="@(p.Id == Model.PaymentModeId)">@p.Name</option>
+                    }
+                </select>
+            </div>
+
+            <div class="d-grid gap-2 mt-3">
+                <button class="btn btn-primary btn-lg" onclick="saveChanges()"><i class="fa-solid fa-check"></i> Save Changes</button>
+                <a class="btn btn-outline-secondary" href="/Sales/Details/@Model.Id">Cancel</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+let cart = [
+    @foreach (var line in Model.SaleItems)
+    {
+        @:{ itemId: @line.ItemId, name: '@line.Item?.Name?.Replace("'", "\\'")', unitPrice: @line.UnitPrice.ToString(System.Globalization.CultureInfo.InvariantCulture), quantity: @line.Quantity.ToString(System.Globalization.CultureInfo.InvariantCulture), discount: @line.Discount.ToString(System.Globalization.CultureInfo.InvariantCulture), gstPercent: @line.GstPercent.ToString(System.Globalization.CultureInfo.InvariantCulture) },
+    }
+];
+
+function addToCart(id, name, price, gstPercent) {
+    const existing = cart.find(l => l.itemId === id);
+    if (existing) { existing.quantity += 1; }
+    else { cart.push({ itemId: id, name: name, unitPrice: price, quantity: 1, discount: 0, gstPercent: gstPercent }); }
+    renderCart();
+}
+
+function removeLine(idx) { cart.splice(idx, 1); renderCart(); }
+function updateQty(idx, qty) {
+    qty = parseFloat(qty);
+    if (isNaN(qty) || qty <= 0) { cart.splice(idx, 1); } else { cart[idx].quantity = qty; }
+    renderCart();
+}
+function updatePrice(idx, price) {
+    price = parseFloat(price);
+    cart[idx].unitPrice = isNaN(price) ? 0 : price;
+    renderCart();
+}
+function updateDiscount(idx, discount) {
+    discount = parseFloat(discount);
+    cart[idx].discount = isNaN(discount) ? 0 : discount;
+    renderCart();
+}
+
+function renderCart() {
+    const container = document.getElementById('cartLines');
+
+    if (cart.length === 0) {
+        container.innerHTML = '<p class="text-muted small">No items — add at least one before saving.</p>';
+        document.getElementById('subTotal').innerText = '₹0.00';
+        document.getElementById('taxTotal').innerText = '₹0.00';
+        document.getElementById('grandTotal').innerText = '₹0.00';
+        return;
+    }
+
+    let subTotal = 0, taxTotal = 0, html = '';
+    cart.forEach((line, idx) => {
+        const lineBase = (line.unitPrice * line.quantity) - line.discount;
+        const lineTax = lineBase * line.gstPercent / 100;
+        subTotal += lineBase; taxTotal += lineTax;
+
+        html += `
+            <div class="pos-cart-line">
+                <div class="d-flex justify-content-between">
+                    <span class="fw-semibold">${line.name}</span>
+                    <button class="btn btn-sm btn-link text-danger p-0" onclick="removeLine(${idx})"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div class="d-flex align-items-center gap-1 mt-1">
+                    <input type="number" min="0.01" step="0.01" value="${line.quantity}" class="form-control form-control-sm" style="width:60px" onchange="updateQty(${idx}, this.value)" />
+                    <input type="number" min="0" step="0.01" value="${line.unitPrice}" class="form-control form-control-sm" style="width:75px" onchange="updatePrice(${idx}, this.value)" />
+                    <input type="number" min="0" step="0.01" value="${line.discount}" class="form-control form-control-sm" style="width:70px" onchange="updateDiscount(${idx}, this.value)" />
+                    <span class="ms-auto fw-semibold">₹${(lineBase + lineTax).toFixed(2)}</span>
+                </div>
+            </div>`;
+    });
+    container.innerHTML = html;
+
+    const overallDiscount = parseFloat(document.getElementById('overallDiscount').value) || 0;
+    const grandTotal = Math.round(subTotal - overallDiscount + taxTotal);
+    document.getElementById('subTotal').innerText = '₹' + subTotal.toFixed(2);
+    document.getElementById('taxTotal').innerText = '₹' + taxTotal.toFixed(2);
+    document.getElementById('grandTotal').innerText = '₹' + grandTotal.toFixed(2);
+}
+
+document.getElementById('itemSearch').addEventListener('input', async function () {
+    const term = this.value;
+    if (!term) return;
+    const res = await fetch('/POS/SearchItems?term=' + encodeURIComponent(term));
+    const results = await res.json();
+    const grid = document.getElementById('itemGrid');
+    grid.innerHTML = '';
+    results.forEach(i => {
+        const thumb = i.imagePath ? `<img src="${i.imagePath}" class="pos-item-thumb" />` : `<div class="pos-item-thumb pos-item-thumb-placeholder"><i class="fa-solid fa-image"></i></div>`;
+        grid.innerHTML += `
+            <div class="col-6 col-md-4 col-lg-3">
+                <div class="pos-item-card" onclick="addToCart(${i.id}, '${i.name.replace("'", "\\'")}', ${i.sellingPrice}, ${i.gstPercent})">
+                    ${thumb}
+                    <div class="fw-semibold">${i.name}</div>
+                    <div class="text-primary fw-bold">₹${i.sellingPrice.toFixed(2)}</div>
+                </div>
+            </div>`;
+    });
+});
+
+async function saveChanges() {
+    if (cart.length === 0) { alert('Add at least one item.'); return; }
+    const payload = {
+        customerId: document.getElementById('customerSelect').value || null,
+        paymentModeId: document.getElementById('paymentMode').value || null,
+        overallDiscount: parseFloat(document.getElementById('overallDiscount').value) || 0,
+        lines: cart.map(l => ({ itemId: l.itemId, quantity: l.quantity, unitPrice: l.unitPrice, discount: l.discount }))
+    };
+    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+    const res = await fetch('/Sales/Edit/@Model.Id', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token || '' },
+        body: JSON.stringify(payload)
+    });
+    if (res.ok) {
+        window.location.href = '/Sales/Details/@Model.Id';
+    } else {
+        alert('Could not save changes. ' + (await res.text()));
+    }
+}
+
+renderCart();
+</script>
+}

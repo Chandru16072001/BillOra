@@ -1,0 +1,77 @@
+@model Sale
+@{
+    ViewData["Title"] = "Invoice " + Model.InvoiceNumber;
+    var returns = (List<SalesReturn>)ViewBag.Returns;
+}
+
+@if (TempData["Success"] != null) { <div class="alert alert-success py-2">@TempData["Success"]</div> }
+@if (TempData["Error"] != null) { <div class="alert alert-danger py-2">@TempData["Error"]</div> }
+
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h3 class="mb-0">Invoice @Model.InvoiceNumber</h3>
+    <div class="d-flex gap-2 flex-wrap">
+        <a class="btn btn-outline-secondary" href="/POS/Print/@Model.Id" target="_blank"><i class="fa-solid fa-print"></i> Print</a>
+        <form asp-action="Email" asp-route-id="@Model.Id" method="post" class="d-inline">
+            <button class="btn btn-outline-secondary"><i class="fa-solid fa-envelope"></i> Email</button>
+        </form>
+        <a class="btn btn-outline-secondary" href="/SalesReturn/Search"><i class="fa-solid fa-rotate-left"></i> Return</a>
+        @if (User.IsInRole("StoreAdmin"))
+        {
+            <a class="btn btn-primary" href="/Sales/Edit/@Model.Id"><i class="fa-solid fa-pen"></i> Modify</a>
+        }
+    </div>
+</div>
+
+<div class="bo-card mb-3">
+    <div class="row">
+        <div class="col-md-4"><strong>Customer:</strong> @(Model.Customer?.Name ?? "Walk-in")</div>
+        <div class="col-md-4"><strong>Date:</strong> @Model.SaleDate.ToLocalTime().ToString("dd MMM yyyy hh:mm tt")</div>
+        <div class="col-md-4"><strong>Payment Mode:</strong> @(Model.PaymentMode?.Name ?? "-")</div>
+    </div>
+</div>
+
+<div class="bo-card mb-3">
+    <table class="table">
+        <thead><tr><th>Item</th><th class="text-end">Qty</th><th class="text-end">Unit Price</th><th class="text-end">Discount</th><th class="text-end">GST%</th><th class="text-end">Line Total</th></tr></thead>
+        <tbody>
+        @foreach (var line in Model.SaleItems)
+        {
+            <tr>
+                <td>@line.Item?.Name</td>
+                <td class="text-end">@line.Quantity</td>
+                <td class="text-end">₹@line.UnitPrice.ToString("N2")</td>
+                <td class="text-end">₹@line.Discount.ToString("N2")</td>
+                <td class="text-end">@line.GstPercent%</td>
+                <td class="text-end">₹@line.LineTotal.ToString("N2")</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+    <div class="text-end">
+        <p>Subtotal: ₹@Model.SubTotal.ToString("N2")</p>
+        <p>Discount: ₹@Model.DiscountAmount.ToString("N2")</p>
+        <p>Tax: ₹@Model.TaxAmount.ToString("N2")</p>
+        <h5>Grand Total: ₹@Model.GrandTotal.ToString("N2")</h5>
+    </div>
+</div>
+
+@if (returns.Any())
+{
+    <div class="bo-card">
+        <h5>Returns Against This Invoice</h5>
+        <table class="table table-sm">
+            <thead><tr><th>Date</th><th>Reason</th><th class="text-end">Refund</th><th class="text-end"></th></tr></thead>
+            <tbody>
+            @foreach (var sr in returns)
+            {
+                <tr>
+                    <td>@sr.ReturnDate.ToLocalTime().ToString("dd MMM yyyy")</td>
+                    <td>@sr.ReturnReason</td>
+                    <td class="text-end">₹@sr.RefundAmount.ToString("N2")</td>
+                    <td class="text-end"><a class="btn btn-sm btn-outline-secondary" href="/SalesReturn/Details/@sr.Id">View</a></td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+}

@@ -1,0 +1,53 @@
+@model Sale
+@{
+    Layout = null;
+    var store = (Store)ViewBag.Store;
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Invoice @Model.InvoiceNumber</title>
+    <style>
+        body { font-family: 'Courier New', monospace; width: 300px; margin: 0 auto; font-size: 13px; }
+        h2, h4 { text-align: center; margin: 4px 0; }
+        table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+        td, th { padding: 2px 0; }
+        .right { text-align: right; }
+        hr { border-top: 1px dashed #000; }
+        @@media print { .no-print { display: none; } }
+    </style>
+</head>
+<body onload="window.print()">
+    <h2>@store.Name</h2>
+    <p style="text-align:center;">@store.Address<br />@store.Phone</p>
+    <hr />
+    <p>Invoice: @Model.InvoiceNumber<br />
+       Date: @Model.SaleDate.ToLocalTime().ToString("dd MMM yyyy hh:mm tt")<br />
+       Customer: @(Model.Customer?.Name ?? "Walk-in")</p>
+    <hr />
+    <table>
+        <thead><tr><th>Item</th><th class="right">Qty</th><th class="right">Amt</th></tr></thead>
+        <tbody>
+        @foreach (var line in Model.SaleItems)
+        {
+            <tr>
+                <td>@line.Item?.Name</td>
+                <td class="right">@line.Quantity</td>
+                <td class="right">@line.LineTotal.ToString("N2")</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+    <hr />
+    <p>Subtotal: <span class="right">@Model.SubTotal.ToString("N2")</span></p>
+    <p>Discount: <span class="right">@Model.DiscountAmount.ToString("N2")</span></p>
+    <p>Tax: <span class="right">@Model.TaxAmount.ToString("N2")</span></p>
+    <h4>Grand Total: ₹@Model.GrandTotal.ToString("N2")</h4>
+    <hr />
+    <p style="text-align:center;">Thank you for shopping with us!</p>
+    <div class="no-print" style="text-align:center; margin-top:10px;">
+        <a href="/POS">Back to POS</a>
+    </div>
+</body>
+</html>

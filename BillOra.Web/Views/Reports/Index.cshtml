@@ -1,0 +1,37 @@
+@{
+    ViewData["Title"] = "Reports";
+    var sections = new[]
+    {
+        ("Sales", new[] { ("Sales Report", "/Reports/SalesReport"), ("Item-wise Sales", "/Reports/ItemWiseSalesReport"), ("Category-wise Sales", "/Reports/CategoryWiseSalesReport"), ("Payment Report", "/Reports/PaymentReport"), ("Sales Return Report", "/SalesReturn/Report") }),
+        ("Inventory & Purchase", new[] { ("Inventory / Stock Report", "/Reports/StockReport"), ("GRN Report", "/Reports/GrnReport"), ("Purchase Report", "/Reports/PurchaseReport") }),
+        ("People", new[] { ("Customer Report", "/Reports/CustomerReport"), ("Vendor Report", "/Reports/VendorReport"), ("Outstanding Report", "/Reports/OutstandingReport") }),
+        ("Finance", new[] { ("GST Report", "/Reports/GstReport"), ("Profit & Loss Report", "/Reports/ProfitLossReport"), ("Account Ledger / History", "/Accounts/History"), ("Balance Sheet", "/Accounts/BalanceSheet") }),
+        ("Activity", new[] { ("User Activity Report / Audit Log", "/Reports/UserActivityReport") })
+    };
+}
+
+<h3 class="mb-4">Reports</h3>
+
+@foreach (var (groupName, reports) in sections)
+{
+    <h6 class="text-muted text-uppercase mt-4 mb-2"
+        style="letter-spacing:.05em;font-size:.8rem;">
+        @groupName
+    </h6>
+
+    <div class="row g-3 mb-2">
+        @foreach (var (name, url) in reports)
+        {
+            <div class="col-md-4 col-6">
+                <a href="@url" class="text-decoration-none">
+                    <div class="bo-card h-100 d-flex align-items-center gap-2">
+                        <i class="fa-solid fa-chart-column text-primary"></i>
+                        <span class="fw-semibold text-dark">@name</span>
+                    </div>
+                </a>
+            </div>
+        }
+    </div>
+}
+
+<p class="text-muted small mt-4">Every report above supports Excel export (top-right button) and, where relevant, filtering by a custom date range.</p>

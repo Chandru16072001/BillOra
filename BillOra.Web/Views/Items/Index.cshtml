@@ -1,0 +1,46 @@
+@model List<Item>
+@{ ViewData["Title"] = "Items"; }
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h3>Items</h3>
+    <a class="btn btn-primary" href="/Items/Create"><i class="fa-solid fa-plus"></i> New Item</a>
+</div>
+
+<div class="bo-card mb-3">
+    <form method="get" class="row g-2">
+        <div class="col-auto flex-grow-1">
+            <input type="text" name="search" value="@ViewBag.Search" class="form-control" placeholder="Search by name or code" />
+        </div>
+        <div class="col-auto"><button class="btn btn-outline-secondary">Search</button></div>
+    </form>
+</div>
+
+<div class="bo-card">
+    <table class="table align-middle">
+        <thead><tr><th></th><th>Code</th><th>Name</th><th>Category</th><th>Stock</th><th>GST%</th><th class="text-end">Price</th><th class="text-end">Actions</th></tr></thead>
+        <tbody>
+        @foreach (var i in Model)
+        {
+            <tr class="@(i.CurrentStock <= i.ReorderLevel ? "table-warning" : "")">
+                <td>
+                    @if (!string.IsNullOrEmpty(i.ImagePath))
+                    {
+                        <img src="@i.ImagePath" style="width:40px;height:40px;object-fit:cover;border-radius:6px;" />
+                    }
+                    else
+                    {
+                        <div class="bg-light text-muted d-flex align-items-center justify-content-center" style="width:40px;height:40px;border-radius:6px;font-size:10px;">No img</div>
+                    }
+                </td>
+                <td>@i.ItemCode</td>
+                <td>@i.Name</td>
+                <td>@(i.Category?.Name ?? "-")</td>
+                <td>@i.CurrentStock @(i.Unit?.ShortCode)</td>
+                <td>@i.GstPercent%</td>
+                <td class="text-end">₹@i.SellingPrice.ToString("N2")</td>
+                <td class="text-end"><a class="btn btn-sm btn-outline-secondary" href="/Items/Edit/@i.Id">Edit</a></td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>

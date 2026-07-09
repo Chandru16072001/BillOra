@@ -1,0 +1,72 @@
+@model Sale
+@{
+    Layout = null;
+    var store = (Store)ViewBag.Store;
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Invoice @Model.InvoiceNumber</title>
+    <style>
+        body { font-family: Arial, sans-serif; font-size: 14px; color: #222; max-width: 800px; margin: 30px auto; }
+        .header { display: flex; justify-content: space-between; border-bottom: 2px solid #333; padding-bottom: 12px; margin-bottom: 16px; }
+        .store-name { font-size: 22px; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background: #f5f6fb; }
+        .text-end { text-align: right; }
+        .totals { width: 300px; margin-left: auto; margin-top: 16px; }
+        .totals td { border: none; padding: 4px 8px; }
+        .grand-total { font-size: 18px; font-weight: bold; border-top: 2px solid #333; }
+        @@media print { .no-print { display: none; } }
+    </style>
+</head>
+<body onload="window.print()">
+    <div class="header">
+        <div>
+            <div class="store-name">@store.Name</div>
+            <div>@store.Address</div>
+            <div>@store.Phone @(string.IsNullOrEmpty(store.GstNumber) ? "" : " | GSTIN: " + store.GstNumber)</div>
+        </div>
+        <div class="text-end">
+            <div><strong>Invoice:</strong> @Model.InvoiceNumber</div>
+            <div><strong>Date:</strong> @Model.SaleDate.ToLocalTime().ToString("dd MMM yyyy hh:mm tt")</div>
+            <div><strong>Customer:</strong> @(Model.Customer?.Name ?? "Walk-in")</div>
+        </div>
+    </div>
+
+    <table>
+        <thead>
+            <tr><th>#</th><th>Item</th><th class="text-end">Qty</th><th class="text-end">Unit Price</th><th class="text-end">GST%</th><th class="text-end">Line Total</th></tr>
+        </thead>
+        <tbody>
+        @{ int rowNum = 1; }
+        @foreach (var line in Model.SaleItems)
+        {
+            <tr>
+                <td>@rowNum</td>
+                <td>@line.Item?.Name</td>
+                <td class="text-end">@line.Quantity</td>
+                <td class="text-end">₹@line.UnitPrice.ToString("N2")</td>
+                <td class="text-end">@line.GstPercent%</td>
+                <td class="text-end">₹@line.LineTotal.ToString("N2")</td>
+            </tr>
+            rowNum++;
+        }
+        </tbody>
+    </table>
+
+    <table class="totals">
+        <tr><td>Subtotal</td><td class="text-end">₹@Model.SubTotal.ToString("N2")</td></tr>
+        <tr><td>Discount</td><td class="text-end">₹@Model.DiscountAmount.ToString("N2")</td></tr>
+        <tr><td>Tax</td><td class="text-end">₹@Model.TaxAmount.ToString("N2")</td></tr>
+        <tr class="grand-total"><td>Grand Total</td><td class="text-end">₹@Model.GrandTotal.ToString("N2")</td></tr>
+    </table>
+
+    <p style="margin-top:30px; text-align:center; color:#666;">Thank you for shopping with us!</p>
+    <div class="no-print" style="text-align:center; margin-top:10px;">
+        <a href="/POS">Back to POS</a>
+    </div>
+</body>
+</html>

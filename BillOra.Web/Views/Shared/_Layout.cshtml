@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, viewport-fit=cover" />
+    <meta name="theme-color" content="#4f46e5" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <title>@ViewData["Title"] - BillOra</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.3.3/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" />
+</head>
+<body>
+@if (User.Identity?.IsAuthenticated == true)
+{
+    <nav class="navbar navbar-expand-lg navbar-dark" style="background:var(--bo-primary);">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/"><i class="fa-solid fa-receipt"></i> BillOra</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMain">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navMain">
+                <ul class="navbar-nav me-auto">
+                    @if (User.IsInRole("Developer"))
+                    {
+                        <li class="nav-item"><a class="nav-link" href="/Developer">Companies</a></li>
+                    }
+                    else
+                    {
+                        <li class="nav-item"><a class="nav-link" href="/Dashboard">Dashboard</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/POS">POS Billing</a></li>
+
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">Sales</a>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="/Sales">Sales Details</a></li>
+                                <li><a class="dropdown-item" href="/SalesReturn/Search">Sales Return</a></li>
+                            </ul>
+                        </li>
+
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">Inventory</a>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="/Items">Items</a></li>
+                                <li><a class="dropdown-item" href="/ItemPrices">Price Master</a></li>
+                                <li><a class="dropdown-item" href="/Categories">Categories</a></li>
+                                <li><a class="dropdown-item" href="/Stock/OpeningStock">Opening Stock</a></li>
+                            </ul>
+                        </li>
+
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">Purchase</a>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="/Vendors">Vendors</a></li>
+                                <li><a class="dropdown-item" href="/Purchases">GRN</a></li>
+                            </ul>
+                        </li>
+
+                        <li class="nav-item"><a class="nav-link" href="/Customers">Customers</a></li>
+
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">Business</a>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="/Reports">Reports</a></li>
+                                <li><a class="dropdown-item" href="/Accounts">Accounts</a></li>
+                                <li><a class="dropdown-item" href="/Accounts/BalanceSheet">Balance Sheet</a></li>
+                            </ul>
+                        </li>
+
+                        @if (User.IsInRole("StoreAdmin"))
+                        {
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">Admin</a>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" href="/Staff">Staff</a></li>
+                                    <li><a class="dropdown-item" href="/Settings">Settings</a></li>
+                                </ul>
+                            </li>
+                        }
+                    }
+                </ul>
+                <form asp-controller="Account" asp-action="Logout" method="post" class="d-flex">
+                    <span class="navbar-text text-white me-3">@User.Identity!.Name</span>
+                    <button class="btn btn-outline-light btn-sm" type="submit">Logout</button>
+                </form>
+            </div>
+        </div>
+    </nav>
+}
+<main class="py-4">
+    <div class="container-fluid">
+        @RenderBody()
+    </div>
+</main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.3.3/js/bootstrap.bundle.min.js"></script>
+@await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
