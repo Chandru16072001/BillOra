@@ -1,65 +1,285 @@
+@using BillOra.Web.Controllers
+@using System.Text.Json
+@model DashboardViewModel
 @{
     ViewData["Title"] = "Dashboard";
+    var jsonOpts = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
 }
-<h3 class="mb-4">Dashboard</h3>
 
-<div class="row g-3 mb-4">
-    <div class="col-md-3 col-6">
-        <div class="bo-card">
-            <div class="bo-stat-label">Today's Sales</div>
-            <div class="bo-stat-value">₹@ViewBag.TodaySalesTotal.ToString("N2")</div>
-            <div class="text-muted small">@ViewBag.TodayBillCount bills</div>
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <div>
+        <h3 class="mb-0">Dashboard</h3>
+        <p class="text-muted mb-0 small">Overview as of @DateTime.Now.ToString("dd MMM yyyy, hh:mm tt")</p>
+    </div>
+    <a href="/Reports" class="btn btn-outline-primary btn-sm"><i class="fa-solid fa-chart-column"></i> Full Reports</a>
+</div>
+
+<!-- ================= KPI STRIP ================= -->
+<div class="row g-3 mb-3">
+    <div class="col-6 col-lg-3">
+        <div class="bo-card kpi-card">
+            <div class="d-flex justify-content-between align-items-start">
+                <div class="bo-stat-label">Today's Sales</div>
+                <div class="kpi-icon bg-primary-soft text-primary"><i class="fa-solid fa-indian-rupee-sign"></i></div>
+            </div>
+            <div class="bo-stat-value">₹@Model.TodaySalesTotal.ToString("N0")</div>
+            <div class="text-muted small">@Model.TodayBillCount bills today</div>
+            @{ var tch = Model.TodayVsYesterdayPercent; }
+            <span class="trend-badge @(tch >= 0 ? "trend-up" : "trend-down")">
+                <i class="fa-solid @(tch >= 0 ? "fa-arrow-trend-up" : "fa-arrow-trend-down")"></i> @Math.Abs(tch)% vs yesterday
+            </span>
         </div>
     </div>
-    <div class="col-md-3 col-6">
-        <div class="bo-card">
-            <div class="bo-stat-label">Monthly Sales</div>
-            <div class="bo-stat-value">₹@ViewBag.MonthSalesTotal.ToString("N2")</div>
+    <div class="col-6 col-lg-3">
+        <div class="bo-card kpi-card">
+            <div class="d-flex justify-content-between align-items-start">
+                <div class="bo-stat-label">This Month's Sales</div>
+                <div class="kpi-icon bg-success-soft text-success"><i class="fa-solid fa-cart-shopping"></i></div>
+            </div>
+            <div class="bo-stat-value">₹@Model.MonthSalesTotal.ToString("N0")</div>
+            <div class="text-muted small">Gross profit ₹@Model.MonthGrossProfit.ToString("N0")</div>
+            @{ var mch = Model.MonthVsLastMonthPercent; }
+            <span class="trend-badge @(mch >= 0 ? "trend-up" : "trend-down")">
+                <i class="fa-solid @(mch >= 0 ? "fa-arrow-trend-up" : "fa-arrow-trend-down")"></i> @Math.Abs(mch)% vs last month
+            </span>
         </div>
     </div>
-    <div class="col-md-3 col-6">
-        <div class="bo-card">
-            <div class="bo-stat-label">Low Stock Items</div>
-            <div class="bo-stat-value text-warning">@ViewBag.LowStockCount</div>
+    <div class="col-6 col-lg-3">
+        <div class="bo-card kpi-card">
+            <div class="d-flex justify-content-between align-items-start">
+                <div class="bo-stat-label">Stock Value</div>
+                <div class="kpi-icon bg-warning-soft text-warning"><i class="fa-solid fa-boxes-stacked"></i></div>
+            </div>
+            <div class="bo-stat-value">₹@Model.StockValue.ToString("N0")</div>
+            <div class="text-muted small">@Model.ItemCount active items</div>
+            <span class="trend-badge @(Model.LowStockCount + Model.OutOfStockCount > 0 ? "trend-down" : "trend-up")">
+                <i class="fa-solid fa-triangle-exclamation"></i> @(Model.LowStockCount + Model.OutOfStockCount) need attention
+            </span>
         </div>
     </div>
-    <div class="col-md-3 col-6">
-        <div class="bo-card">
-            <div class="bo-stat-label">Out of Stock</div>
-            <div class="bo-stat-value text-danger">@ViewBag.OutOfStockCount</div>
+    <div class="col-6 col-lg-3">
+        <div class="bo-card kpi-card">
+            <div class="d-flex justify-content-between align-items-start">
+                <div class="bo-stat-label">Outstanding</div>
+                <div class="kpi-icon bg-danger-soft text-danger"><i class="fa-solid fa-hand-holding-dollar"></i></div>
+            </div>
+            <div class="bo-stat-value">₹@Model.PendingPayments.ToString("N0")</div>
+            <div class="text-muted small">@Model.CustomerCount active customers</div>
+            <span class="trend-badge trend-neutral"><i class="fa-solid fa-truck"></i> ₹@Model.PurchaseThisMonth.ToString("N0") purchased MTD</span>
         </div>
     </div>
 </div>
 
-<div class="row g-3 mb-4">
-    <div class="col-md-6 col-6">
+<!-- ================= INSIGHTS ================= -->
+<div class="bo-card mb-3 insights-card">
+    <h6 class="mb-2"><i class="fa-solid fa-lightbulb text-warning"></i> Business Insights</h6>
+    <div class="row g-2">
+        @foreach (var insight in Model.Insights)
+        {
+            <div class="col-md-6">
+                <div class="insight-pill"><i class="fa-solid fa-circle-check text-primary"></i> @insight</div>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- ================= CHARTS ROW 1 ================= -->
+<div class="row g-3 mb-3">
+    <div class="col-lg-8">
         <div class="bo-card">
-            <div class="bo-stat-label">Active Items</div>
-            <div class="bo-stat-value">@ViewBag.ItemCount</div>
+            <h6 class="mb-3">Sales Trend — Last 14 Days</h6>
+            <canvas id="salesTrendChart" height="90"></canvas>
         </div>
     </div>
-    <div class="col-md-6 col-6">
+    <div class="col-lg-4">
         <div class="bo-card">
-            <div class="bo-stat-label">Customers</div>
-            <div class="bo-stat-value">@ViewBag.CustomerCount</div>
+            <h6 class="mb-3">Stock Status</h6>
+            <canvas id="stockStatusChart" height="180"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- ================= CHARTS ROW 2 ================= -->
+<div class="row g-3 mb-3">
+    <div class="col-lg-4">
+        <div class="bo-card">
+            <h6 class="mb-3">Category-wise Sales (This Month)</h6>
+            <canvas id="categoryChart" height="220"></canvas>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="bo-card">
+            <h6 class="mb-3">Top Selling Items (This Month)</h6>
+            <canvas id="topItemsChart" height="220"></canvas>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="bo-card">
+            <h6 class="mb-3">Payment Mode Split (This Month)</h6>
+            <canvas id="paymentChart" height="220"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- ================= TABLES ================= -->
+<div class="row g-3 mb-3">
+    <div class="col-lg-6">
+        <div class="bo-card h-100">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h6 class="mb-0">Low Stock Alerts</h6>
+                <a href="/Reports/StockReport" class="small">View all →</a>
+            </div>
+            @if (Model.LowStockItems.Count == 0)
+            {
+                <p class="text-muted small mb-0">Nothing low on stock right now.</p>
+            }
+            else
+            {
+                <table class="table table-sm mb-0">
+                    <thead><tr><th>Item</th><th class="text-end">Stock</th><th class="text-end">Reorder At</th></tr></thead>
+                    <tbody>
+                    @foreach (var i in Model.LowStockItems)
+                    {
+                        <tr>
+                            <td>@i.Name</td>
+                            <td class="text-end">
+                                <span class="badge @(i.CurrentStock <= 0 ? "bg-danger" : "bg-warning text-dark")">@i.CurrentStock</span>
+                            </td>
+                            <td class="text-end text-muted">@i.ReorderLevel</td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            }
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="bo-card h-100">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h6 class="mb-0">Top Customers (This Month)</h6>
+                <a href="/Reports/CustomerReport" class="small">View all →</a>
+            </div>
+            @if (Model.TopCustomers.Count == 0)
+            {
+                <p class="text-muted small mb-0">No customer sales recorded yet this month.</p>
+            }
+            else
+            {
+                <table class="table table-sm mb-0">
+                    <thead><tr><th>Customer</th><th class="text-end">Bills</th><th class="text-end">Total Spend</th></tr></thead>
+                    <tbody>
+                    @foreach (var c in Model.TopCustomers)
+                    {
+                        <tr>
+                            <td>@c.Name</td>
+                            <td class="text-end">@c.Bills</td>
+                            <td class="text-end fw-semibold">₹@c.Total.ToString("N0")</td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            }
         </div>
     </div>
 </div>
 
 <div class="bo-card">
-    <h5>Recent Bills</h5>
-    <table class="table table-sm mt-3">
-        <thead><tr><th>Invoice</th><th>Customer</th><th>Date</th><th class="text-end">Total</th></tr></thead>
-        <tbody>
-        @foreach (var s in (IEnumerable<BillOra.Domain.Entities.Sale>)ViewBag.RecentSales)
-        {
-            <tr>
-                <td>@s.InvoiceNumber</td>
-                <td>@(s.Customer?.Name ?? "Walk-in")</td>
-                <td>@s.SaleDate.ToLocalTime().ToString("dd MMM, hh:mm tt")</td>
-                <td class="text-end">₹@s.GrandTotal.ToString("N2")</td>
-            </tr>
-        }
-        </tbody>
-    </table>
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <h6 class="mb-0">Recent Bills</h6>
+        <a href="/Sales" class="small">View all →</a>
+    </div>
+    <div class="table-responsive-wrap">
+        <table class="table table-sm mb-0">
+            <thead><tr><th>Invoice</th><th>Customer</th><th>Date</th><th class="text-end">Total</th></tr></thead>
+            <tbody>
+            @foreach (var s in Model.RecentSales)
+            {
+                <tr onclick="window.location='/Sales/Details/@s.Id'" style="cursor:pointer;">
+                    <td>@s.InvoiceNumber</td>
+                    <td>@(s.Customer?.Name ?? "Walk-in")</td>
+                    <td>@s.SaleDate.ToLocalTime().ToString("dd MMM, hh:mm tt")</td>
+                    <td class="text-end fw-semibold">₹@s.GrandTotal.ToString("N2")</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
 </div>
+
+@section Scripts {
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<script>
+    const chartPalette = ['#4f46e5', '#22c55e', '#f59e0b', '#ef4444', '#06b6d4', '#a855f7', '#ec4899', '#84cc16'];
+    Chart.defaults.font.family = "'Segoe UI', system-ui, sans-serif";
+    Chart.defaults.color = '#6b7280';
+
+    // ---------- Sales Trend ----------
+    new Chart(document.getElementById('salesTrendChart'), {
+        type: 'line',
+        data: {
+            labels: @Html.Raw(JsonSerializer.Serialize(Model.SalesTrendLabels, jsonOpts)),
+            datasets: [{
+                label: 'Sales',
+                data: @Html.Raw(JsonSerializer.Serialize(Model.SalesTrendValues, jsonOpts)),
+                borderColor: '#4f46e5',
+                backgroundColor: 'rgba(79,70,229,.08)',
+                fill: true,
+                tension: 0.35,
+                pointRadius: 3,
+                pointBackgroundColor: '#4f46e5'
+            }]
+        },
+        options: {
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, ticks: { callback: v => '₹' + v } } }
+        }
+    });
+
+    // ---------- Stock Status ----------
+    new Chart(document.getElementById('stockStatusChart'), {
+        type: 'doughnut',
+        data: {
+            labels: ['In Stock', 'Low Stock', 'Out of Stock'],
+            datasets: [{
+                data: [@(Model.ItemCount - Model.LowStockCount - Model.OutOfStockCount), @Model.LowStockCount, @Model.OutOfStockCount],
+                backgroundColor: ['#22c55e', '#f59e0b', '#ef4444']
+            }]
+        },
+        options: { plugins: { legend: { position: 'bottom' } } }
+    });
+
+    // ---------- Category-wise Sales ----------
+    new Chart(document.getElementById('categoryChart'), {
+        type: 'doughnut',
+        data: {
+            labels: @Html.Raw(JsonSerializer.Serialize(Model.CategoryLabels, jsonOpts)),
+            datasets: [{ data: @Html.Raw(JsonSerializer.Serialize(Model.CategoryValues, jsonOpts)), backgroundColor: chartPalette }]
+        },
+        options: { plugins: { legend: { position: 'bottom', labels: { boxWidth: 10 } } } }
+    });
+
+    // ---------- Top Items ----------
+    new Chart(document.getElementById('topItemsChart'), {
+        type: 'bar',
+        data: {
+            labels: @Html.Raw(JsonSerializer.Serialize(Model.TopItemLabels, jsonOpts)),
+            datasets: [{ label: 'Revenue', data: @Html.Raw(JsonSerializer.Serialize(Model.TopItemValues, jsonOpts)), backgroundColor: '#4f46e5', borderRadius: 6 }]
+        },
+        options: {
+            indexAxis: 'y',
+            plugins: { legend: { display: false } },
+            scales: { x: { beginAtZero: true, ticks: { callback: v => '₹' + v } } }
+        }
+    });
+
+    // ---------- Payment Mode ----------
+    new Chart(document.getElementById('paymentChart'), {
+        type: 'pie',
+        data: {
+            labels: @Html.Raw(JsonSerializer.Serialize(Model.PaymentLabels, jsonOpts)),
+            datasets: [{ data: @Html.Raw(JsonSerializer.Serialize(Model.PaymentValues, jsonOpts)), backgroundColor: chartPalette }]
+        },
+        options: { plugins: { legend: { position: 'bottom', labels: { boxWidth: 10 } } } }
+    });
+</script>
+}
