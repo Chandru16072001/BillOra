@@ -59,7 +59,12 @@ public class DashboardController : Controller
         vm.MonthGrossProfit = vm.MonthSalesTotal - cogs;
 
         // ---------- Purchases / stock ----------
-        vm.PurchaseThisMonth = await _db.Purchases.Where(p => p.PurchaseDate >= monthStart).SumAsync(p => (decimal?)p.GrandTotal) ?? 0;
+       // vm.PurchaseThisMonth = await _db.Purchases.Where(p => p.PurchaseDate >= monthStart).SumAsync(p => (decimal?)p.GrandTotal) ?? 0;
+vm.PurchaseThisMonth = (await _db.Purchases
+    .Where(p => p.PurchaseDate >= monthStart)
+    .Select(p => p.GrandTotal)
+    .ToListAsync())
+    .Sum();
 
         var items = await _db.Items.Include(i => i.Category).Where(i => i.IsActive).ToListAsync();
         vm.StockValue = items.Sum(i => i.CurrentStock * i.PurchasePrice);
@@ -71,8 +76,12 @@ public class DashboardController : Controller
 
         // ---------- Customers / outstanding ----------
         vm.CustomerCount = await _db.Customers.CountAsync(c => c.IsActive);
-        vm.PendingPayments = await _db.Customers.SumAsync(c => (decimal?)c.OutstandingAmount) ?? 0;
-
+      //  vm.PendingPayments = await _db.Customers.SumAsync(c => (decimal?)c.OutstandingAmount) ?? 0;
+vm.PendingPayments = (await _db.Customers
+    .Where(c => c.IsActive)
+    .Select(c => c.OutstandingAmount)
+    .ToListAsync())
+    .Sum();
         // ---------- Sales trend (last 14 days) ----------
         var trendSales = await _db.Sales.Where(s => s.SaleDate.Date >= trendStart && !s.IsHeld).ToListAsync();
         for (var d = trendStart; d <= today; d = d.AddDays(1))
