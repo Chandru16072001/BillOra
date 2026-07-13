@@ -5,42 +5,52 @@
 
 <h3 class="mb-4">Sales Return</h3>
 
-<div class="bo-card mb-3" style="max-width:500px;">
+<div class="bo-card mb-3">
     <label class="form-label">Invoice Number</label>
     <div class="d-flex gap-2">
-        <input id="invoiceSearch" class="form-control" placeholder="e.g. INV-202607-0001" />
-        <button class="btn btn-primary" onclick="findInvoice()">Search</button>
+        <input id="invoiceSearch" class="form-control form-control-lg" placeholder="e.g. INV-202607-0001" inputmode="text" />
+        <button class="btn btn-primary" style="min-width:90px;" onclick="findInvoice()"><i class="fa-solid fa-magnifying-glass"></i></button>
     </div>
     <div id="searchError" class="text-danger small mt-2"></div>
 </div>
 
-<div id="returnPanel" class="bo-card" style="display:none;">
-    <h5 id="invoiceHeader"></h5>
-    <p class="text-muted" id="invoiceMeta"></p>
+<div id="returnPanel" style="display:none; padding-bottom:90px;">
+    <div class="bo-card mb-3">
+        <h5 class="mb-1" id="invoiceHeader"></h5>
+        <p class="text-muted mb-0" id="invoiceMeta"></p>
+    </div>
 
-    <table class="table table-sm">
-        <thead><tr><th></th><th>Item</th><th class="text-end">Sold Qty</th><th class="text-end">Already Returned</th><th class="text-end">Return Qty</th><th class="text-end">Refund</th></tr></thead>
-        <tbody id="returnLines"></tbody>
-    </table>
+    <div id="returnLines"></div>
 
-    <div class="row g-3 mt-2">
-        <div class="col-md-6">
-            <label class="form-label">Return Reason</label>
-            <input id="returnReason" class="form-control" placeholder="e.g. wrong size, damaged, customer changed mind" />
-        </div>
-        <div class="col-md-6">
-            <label class="form-label">Load Stock Back?</label>
-            <select id="loadStock" class="form-select">
-                <option value="true">Yes - add returned quantity back to inventory</option>
-                <option value="false">No - do not restock (damaged/unsellable)</option>
-            </select>
+    <div class="bo-card mt-3">
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label class="form-label">Return Reason</label>
+                <input id="returnReason" class="form-control" placeholder="e.g. wrong size, damaged, customer changed mind" />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Load Stock Back?</label>
+                <select id="loadStock" class="form-select">
+                    <option value="true">Yes - add returned quantity back to inventory</option>
+                    <option value="false">No - do not restock (damaged/unsellable)</option>
+                </select>
+            </div>
         </div>
     </div>
 
-    <div class="d-flex justify-content-between align-items-center mt-3">
-        <h5>Total Refund: <span id="totalRefund">₹0.00</span></h5>
+    <div class="d-none d-lg-flex justify-content-between align-items-center mt-3">
+        <h5 class="mb-0">Total Refund: <span id="totalRefundDesktop">₹0.00</span></h5>
         <button class="btn btn-primary btn-lg" onclick="submitReturn()"><i class="fa-solid fa-rotate-left"></i> Process Return</button>
     </div>
+</div>
+
+<!-- Sticky mobile action bar so Process Return is always reachable without scrolling back up -->
+<div class="billing-sticky-footer" id="stickyFooter">
+    <div>
+        <div class="fw-bold" id="stickyItemCount">0 items selected</div>
+        <div class="text-muted small" id="stickyTotal">Refund ₹0.00</div>
+    </div>
+    <button class="btn btn-primary" onclick="submitReturn()"><i class="fa-solid fa-rotate-left"></i> Process</button>
 </div>
 
 @section Scripts {
@@ -56,6 +66,7 @@ async function findInvoice() {
     if (!res.ok) {
         document.getElementById('searchError').innerText = 'No invoice found with that number.';
         document.getElementById('returnPanel').style.display = 'none';
+        document.getElementById('stickyFooter').classList.remove('visible');
         return;
     }
     currentSale = await res.json();
@@ -67,35 +78,61 @@ function renderReturnPanel() {
     document.getElementById('invoiceHeader').innerText = 'Invoice ' + currentSale.invoiceNumber;
     document.getElementById('invoiceMeta').innerText = currentSale.customerName + ' — ' + currentSale.saleDate + ' — Total ₹' + currentSale.grandTotal.toFixed(2);
 
-    const tbody = document.getElementById('returnLines');
-    tbody.innerHTML = '';
+    const container = document.getElementById('returnLines');
+    container.innerHTML = '';
     currentSale.lines.forEach(line => {
         const returnable = line.quantity - line.alreadyReturned;
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td><input type="checkbox" class="line-check" data-id="${line.id}" ${returnable <= 0 ? 'disabled' : ''} /></td>
-            <td>${line.itemName}</td>
-            <td class="text-end">${line.quantity}</td>
-            <td class="text-end">${line.alreadyReturned}</td>
-            <td class="text-end"><input type="number" min="0" max="${returnable}" step="0.01" value="0" class="form-control form-control-sm qty-input" style="width:80px" data-id="${line.id}" data-price="${line.unitPrice}" data-gst="${line.gstPercent}" ${returnable <= 0 ? 'disabled' : ''} oninput="recalc()" /></td>
-            <td class="text-end line-refund" data-id="${line.id}">₹0.00</td>`;
-        tbody.appendChild(tr);
+        const disabled = returnable <= 0;
+        const div = document.createElement('div');
+        div.className = 'bo-card mb-2';
+        div.innerHTML = `
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <div class="fw-semibold">${line.itemName}</div>
+                    <div class="text-muted small">Sold: ${line.quantity} &nbsp;·&nbsp; Already returned: ${line.alreadyReturned} &nbsp;·&nbsp; ₹${line.unitPrice.toFixed(2)} each</div>
+                </div>
+                <div class="fw-bold text-end line-refund" data-id="${line.id}">₹0.00</div>
+            </div>
+            <div class="d-flex justify-content-between align-items-center mt-2">
+                <span class="text-muted small">Return quantity</span>
+                <div class="qty-stepper ${disabled ? 'opacity-50' : ''}">
+                    <button type="button" ${disabled ? 'disabled' : ''} onclick="stepReturnQty(${line.id}, -1, ${returnable})">−</button>
+                    <input type="number" min="0" max="${returnable}" step="0.01" value="0" class="qty-input" data-id="${line.id}" data-price="${line.unitPrice}" data-gst="${line.gstPercent}" data-max="${returnable}" ${disabled ? 'disabled' : ''} oninput="recalc()" />
+                    <button type="button" ${disabled ? 'disabled' : ''} onclick="stepReturnQty(${line.id}, 1, ${returnable})">+</button>
+                </div>
+            </div>`;
+        container.appendChild(div);
     });
+    recalc();
+}
+
+function stepReturnQty(id, delta, max) {
+    const input = document.querySelector(`.qty-input[data-id="${id}"]`);
+    let val = (parseFloat(input.value) || 0) + delta;
+    if (val < 0) val = 0;
+    if (val > max) val = max;
+    input.value = val;
     recalc();
 }
 
 function recalc() {
     let total = 0;
+    let selectedCount = 0;
     document.querySelectorAll('.qty-input').forEach(input => {
         const qty = parseFloat(input.value) || 0;
+        if (qty > 0) selectedCount++;
         const price = parseFloat(input.dataset.price);
         const gst = parseFloat(input.dataset.gst);
         const refund = qty * price * (1 + gst / 100);
         total += refund;
         document.querySelector(`.line-refund[data-id="${input.dataset.id}"]`).innerText = '₹' + refund.toFixed(2);
     });
-    document.getElementById('totalRefund').innerText = '₹' + total.toFixed(2);
+    document.getElementById('totalRefundDesktop').innerText = '₹' + total.toFixed(2);
+    document.getElementById('stickyItemCount').innerText = selectedCount + (selectedCount === 1 ? ' item selected' : ' items selected');
+    document.getElementById('stickyTotal').innerText = 'Refund ₹' + total.toFixed(2);
+    document.getElementById('stickyFooter').classList.toggle('visible', selectedCount > 0 && window.innerWidth < 992);
 }
+window.addEventListener('resize', recalc);
 
 async function submitReturn() {
     const lines = [];
@@ -127,5 +164,9 @@ async function submitReturn() {
         alert('Could not process the return. ' + (await res.text()));
     }
 }
+
+document.getElementById('invoiceSearch').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') findInvoice();
+});
 </script>
 }

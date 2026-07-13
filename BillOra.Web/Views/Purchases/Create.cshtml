@@ -4,21 +4,26 @@
 }
 @Html.AntiForgeryToken()
 
-<h3 class="mb-4">New GRN (Goods Receipt Note)</h3>
+<h3 class="mb-3">New GRN (Goods Receipt Note)</h3>
 
-<div class="pos-grid">
-    <div>
+<div class="billing-tabs">
+    <div class="tab-btn active" id="tabItemsBtn" onclick="switchTab('items')"><i class="fa-solid fa-magnifying-glass"></i> Items</div>
+    <div class="tab-btn" id="tabCartBtn" onclick="switchTab('cart')"><i class="fa-solid fa-truck-loading"></i> Received <span class="tab-count" id="cartCountBadge">0</span></div>
+</div>
+
+<div class="billing-shell">
+    <div class="billing-pane active" id="billingItemsPane">
         <div class="bo-card mb-3">
             <input id="itemSearch" class="form-control form-control-lg" placeholder="Search item by name, code, or barcode..." autofocus />
         </div>
         <div id="itemGrid" class="row g-2"></div>
     </div>
 
-    <div>
+    <div class="billing-pane" id="billingCartPane">
         <div class="bo-card">
             <div class="mb-2">
                 <label class="form-label small mb-1">Vendor</label>
-                <select id="vendorSelect" class="form-select form-select-sm">
+                <select id="vendorSelect" class="form-select">
                     <option value="">-- select vendor --</option>
                     @foreach (var v in vendors)
                     {
@@ -28,86 +33,146 @@
             </div>
             <div class="mb-3">
                 <label class="form-label small mb-1">Vendor Invoice No. (optional)</label>
-                <input id="invoiceNumber" class="form-control form-control-sm" placeholder="Auto-generated if left blank" />
+                <input id="invoiceNumber" class="form-control" placeholder="Auto-generated if left blank" />
             </div>
 
-            <h5 class="mb-2"><i class="fa-solid fa-truck-loading"></i> Items Received</h5>
-            <div id="cartLines" style="max-height:300px; overflow-y:auto;">
-                <p class="text-muted small" id="emptyCartMsg">No items added yet.</p>
+            <h5 class="mb-2 d-none d-lg-block"><i class="fa-solid fa-truck-loading"></i> Items Received</h5>
+            <div id="cartLines" style="max-height:34vh; overflow-y:auto;">
+                <p class="text-muted small" id="emptyCartMsg">No items added yet. Switch to Items to start receiving stock.</p>
             </div>
 
             <hr />
             <div class="mb-2">
                 <label class="form-label small mb-1">Overall Discount (₹)</label>
-                <input id="overallDiscount" type="number" min="0" value="0" class="form-control form-control-sm" oninput="renderCart()" />
+                <input id="overallDiscount" type="number" min="0" value="0" class="form-control" oninput="renderCart()" />
             </div>
             <div class="d-flex justify-content-between small"><span>Subtotal</span><span id="subTotal">₹0.00</span></div>
             <div class="d-flex justify-content-between small"><span>Tax</span><span id="taxTotal">₹0.00</span></div>
             <div class="d-flex justify-content-between fw-bold fs-5 mt-2"><span>Total</span><span id="grandTotal">₹0.00</span></div>
 
-            <div class="d-grid mt-3">
+            <div class="d-grid gap-2 mt-3">
                 <button class="btn btn-primary btn-lg" onclick="saveGrn()"><i class="fa-solid fa-check"></i> Save GRN</button>
+                <button class="btn btn-outline-secondary d-lg-none" onclick="switchTab('items')"><i class="fa-solid fa-arrow-left"></i> Back to Items</button>
             </div>
         </div>
     </div>
 </div>
 
+<div class="billing-sticky-footer" id="stickyFooter" onclick="switchTab('cart')">
+    <div>
+        <div class="fw-bold" id="stickyItemCount">0 items</div>
+        <div class="text-muted small" id="stickyTotal">₹0.00</div>
+    </div>
+    <button class="btn btn-primary"><i class="fa-solid fa-truck-loading"></i> View Receipt</button>
+</div>
+
 @section Scripts {
 <script>
 let cart = [];
+let currentTab = 'items';
+
+function switchTab(tab) {
+    currentTab = tab;
+    document.getElementById('billingItemsPane').classList.toggle('active', tab === 'items');
+    document.getElementById('billingCartPane').classList.toggle('active', tab === 'cart');
+    document.getElementById('tabItemsBtn').classList.toggle('active', tab === 'items');
+    document.getElementById('tabCartBtn').classList.toggle('active', tab === 'cart');
+    updateStickyFooter();
+    if (tab === 'items') window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function updateStickyFooter() {
+    const footer = document.getElementById('stickyFooter');
+    const show = currentTab === 'items' && cart.length > 0 && window.innerWidth < 992;
+    footer.classList.toggle('visible', show);
+}
+window.addEventListener('resize', updateStickyFooter);
 
 function addToCart(id, name, price, gstPercent) {
     const existing = cart.find(l => l.itemId === id);
     if (existing) { existing.quantity += 1; }
     else { cart.push({ itemId: id, name: name, unitPrice: price, quantity: 1, discount: 0, gstPercent: gstPercent }); }
     renderCart();
+    syncItemCardBadges();
 }
 
-function removeLine(idx) { cart.splice(idx, 1); renderCart(); }
+function removeLine(idx) { cart.splice(idx, 1); renderCart(); syncItemCardBadges(); }
+function stepQty(idx, delta) {
+    const newQty = Math.round((cart[idx].quantity + delta) * 100) / 100;
+    if (newQty <= 0) { cart.splice(idx, 1); } else { cart[idx].quantity = newQty; }
+    renderCart();
+    syncItemCardBadges();
+}
 function updateQty(idx, qty) {
     qty = parseFloat(qty);
     if (isNaN(qty) || qty <= 0) { cart.splice(idx, 1); } else { cart[idx].quantity = qty; }
     renderCart();
+    syncItemCardBadges();
 }
 function updatePrice(idx, price) {
     price = parseFloat(price);
     cart[idx].unitPrice = isNaN(price) ? 0 : price;
     renderCart();
 }
+function toggleLineDetails(idx) {
+    document.getElementById('lineDetails_' + idx)?.classList.toggle('expanded');
+}
+
+function syncItemCardBadges() {
+    document.querySelectorAll('.pos-item-card').forEach(card => {
+        const id = parseInt(card.dataset.itemId);
+        const line = cart.find(l => l.itemId === id);
+        const badge = card.querySelector('.pos-item-in-cart-badge');
+        if (!badge) return;
+        if (line) { badge.style.display = 'flex'; badge.innerText = line.quantity; }
+        else { badge.style.display = 'none'; }
+    });
+}
 
 function renderCart() {
     const container = document.getElementById('cartLines');
 
     if (cart.length === 0) {
-        container.innerHTML = '<p class="text-muted small" id="emptyCartMsg">No items added yet.</p>';
+        container.innerHTML = '<p class="text-muted small" id="emptyCartMsg">No items added yet. Switch to Items to start receiving stock.</p>';
         document.getElementById('subTotal').innerText = '₹0.00';
         document.getElementById('taxTotal').innerText = '₹0.00';
         document.getElementById('grandTotal').innerText = '₹0.00';
+        document.getElementById('cartCountBadge').innerText = '0';
+        updateStickyFooter();
         return;
     }
 
-    let subTotal = 0, taxTotal = 0;
-    let html = '';
-
+    let subTotal = 0, taxTotal = 0, totalQty = 0, html = '';
     cart.forEach((line, idx) => {
         const lineBase = (line.unitPrice * line.quantity) - line.discount;
         const lineTax = lineBase * line.gstPercent / 100;
-        subTotal += lineBase; taxTotal += lineTax;
+        subTotal += lineBase; taxTotal += lineTax; totalQty += line.quantity;
 
         html += `
             <div class="pos-cart-line">
-                <div class="d-flex justify-content-between">
+                <div class="d-flex justify-content-between align-items-start">
                     <span class="fw-semibold">${line.name}</span>
-                    <button class="btn btn-sm btn-link text-danger p-0" onclick="removeLine(${idx})"><i class="fa-solid fa-xmark"></i></button>
+                    <button class="btn btn-sm btn-link text-danger p-0" onclick="removeLine(${idx})"><i class="fa-solid fa-trash"></i></button>
                 </div>
-                <div class="d-flex justify-content-between align-items-center mt-1 gap-1">
-                    <input type="number" min="0.01" step="0.01" value="${line.quantity}" class="form-control form-control-sm" style="width:70px" onchange="updateQty(${idx}, this.value)" />
-                    <input type="number" min="0" step="0.01" value="${line.unitPrice}" class="form-control form-control-sm" style="width:90px" onchange="updatePrice(${idx}, this.value)" />
-                    <span class="fw-semibold">₹${(lineBase + lineTax).toFixed(2)}</span>
+                <div class="d-flex justify-content-between align-items-center mt-2 flex-wrap gap-2">
+                    <div class="qty-stepper">
+                        <button type="button" onclick="stepQty(${idx}, -1)">−</button>
+                        <input type="number" value="${line.quantity}" onchange="updateQty(${idx}, this.value)" />
+                        <button type="button" onclick="stepQty(${idx}, 1)">+</button>
+                    </div>
+                    <span class="fw-bold">₹${(lineBase + lineTax).toFixed(2)}</span>
+                </div>
+                <div class="mt-1">
+                    <span class="billing-line-toggle" onclick="toggleLineDetails(${idx})"><i class="fa-solid fa-sliders"></i> Edit cost price</span>
+                    <div class="billing-line-details gap-2 mt-2" id="lineDetails_${idx}">
+                        <div class="flex-fill">
+                            <label class="text-muted d-block" style="font-size:10px;">Unit Cost</label>
+                            <input type="number" min="0" step="0.01" value="${line.unitPrice}" class="form-control form-control-sm" onchange="updatePrice(${idx}, this.value)" />
+                        </div>
+                    </div>
                 </div>
             </div>`;
     });
-
     container.innerHTML = html;
 
     const overallDiscount = parseFloat(document.getElementById('overallDiscount').value) || 0;
@@ -115,6 +180,11 @@ function renderCart() {
     document.getElementById('subTotal').innerText = '₹' + subTotal.toFixed(2);
     document.getElementById('taxTotal').innerText = '₹' + taxTotal.toFixed(2);
     document.getElementById('grandTotal').innerText = '₹' + grandTotal.toFixed(2);
+    document.getElementById('cartCountBadge').innerText = cart.length;
+
+    document.getElementById('stickyItemCount').innerText = totalQty + (totalQty === 1 ? ' item' : ' items');
+    document.getElementById('stickyTotal').innerText = '₹' + grandTotal.toFixed(2);
+    updateStickyFooter();
 }
 
 document.getElementById('itemSearch').addEventListener('input', async function () {
@@ -127,18 +197,20 @@ document.getElementById('itemSearch').addEventListener('input', async function (
     results.forEach(i => {
         grid.innerHTML += `
             <div class="col-6 col-md-4 col-lg-3">
-                <div class="pos-item-card" onclick="addToCart(${i.id}, '${i.name.replace("'", "\\'")}', ${i.purchasePrice}, ${i.gstPercent})">
+                <div class="pos-item-card" data-item-id="${i.id}" onclick="addToCart(${i.id}, '${i.name.replace("'", "\\'")}', ${i.purchasePrice}, ${i.gstPercent})">
+                    <span class="pos-item-in-cart-badge" style="display:none;">0</span>
                     <div class="fw-semibold">${i.name}</div>
                     <div class="text-muted small">Current stock: ${i.currentStock}</div>
                     <div class="text-primary fw-bold">Last cost ₹${i.purchasePrice.toFixed(2)}</div>
                 </div>
             </div>`;
     });
+    syncItemCardBadges();
 });
 
 async function saveGrn() {
     const vendorId = document.getElementById('vendorSelect').value;
-    if (!vendorId) { alert('Select a vendor first.'); return; }
+    if (!vendorId) { alert('Select a vendor first.'); switchTab('cart'); return; }
     if (cart.length === 0) { alert('Add at least one item.'); return; }
 
     const payload = {

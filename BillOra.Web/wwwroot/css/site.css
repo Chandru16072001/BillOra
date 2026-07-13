@@ -58,13 +58,13 @@ body {
 .table thead th { font-size: .75rem; text-transform: uppercase; letter-spacing: .04em; color: var(--bo-text-muted); border-bottom-width: 1px; }
 
 /* ---------- POS ---------- */
-.pos-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 1rem; align-items: start; }
 .pos-item-card {
   cursor: pointer;
   border: 1px solid var(--bo-border);
   border-radius: var(--bo-radius-sm);
   padding: .65rem;
   background: #fff;
+  position: relative;
   transition: box-shadow .15s ease, border-color .15s ease, transform .1s ease;
   -webkit-user-select: none;
   user-select: none;
@@ -87,19 +87,103 @@ body {
   color: #c7c9d9;
   font-size: 1.4rem;
 }
-
-.pos-cart-line { border-bottom: 1px solid #f0f0f4; padding: .55rem 0; }
-
-/* ---------- Mobile-first overrides ---------- */
-@media (max-width: 991px) {
-  .pos-grid { grid-template-columns: 1fr; }
-
-  /* Cart panel becomes a sticky bottom sheet-style block on phones/tablets
-     so the item grid stays scrollable above it without losing the totals. */
-  .pos-grid > div:last-child { position: sticky; bottom: 0; z-index: 20; }
-  .pos-grid .bo-card { box-shadow: 0 -4px 16px rgba(0,0,0,.1); }
+/* Badge showing quantity already in cart, pinned to a browsed item card */
+.pos-item-in-cart-badge {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  background: var(--bo-primary);
+  color: #fff;
+  font-size: .72rem;
+  font-weight: 700;
+  min-width: 20px;
+  height: 20px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 5px;
 }
 
+.pos-cart-line { border-bottom: 1px solid #f0f0f4; padding: .65rem 0; }
+
+/* ---------- Shared "billing shell" layout used by POS, GRN, and Sales Return ----------
+   Desktop/tablet (>=992px): two columns side by side, both always visible.
+   Mobile (<992px): one column at a time (Items vs Cart), switched with a tab bar,
+   plus a sticky bottom summary bar so totals/checkout are always one thumb away. */
+.billing-shell { display: grid; grid-template-columns: 2fr 1fr; gap: 1rem; align-items: start; }
+
+.billing-tabs { display: none; }
+
+.qty-stepper { display: inline-flex; align-items: center; border: 1px solid var(--bo-border); border-radius: 8px; overflow: hidden; }
+.qty-stepper button {
+  width: 36px; height: 36px; border: none; background: #f5f6fb; font-size: 1.1rem; font-weight: 700;
+  color: var(--bo-primary); display: flex; align-items: center; justify-content: center; line-height: 1;
+}
+.qty-stepper button:active { background: var(--bo-primary-light); }
+.qty-stepper input {
+  width: 44px; height: 36px; border: none; border-left: 1px solid var(--bo-border); border-right: 1px solid var(--bo-border);
+  text-align: center; font-weight: 600; -moz-appearance: textfield;
+}
+.qty-stepper input::-webkit-outer-spin-button, .qty-stepper input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+.billing-line-details { display: none; }
+.billing-line-details.expanded { display: flex; }
+.billing-line-toggle { cursor: pointer; color: var(--bo-primary); font-size: .78rem; }
+
+.billing-sticky-footer {
+  display: none;
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  background: #fff;
+  border-top: 1px solid var(--bo-border);
+  box-shadow: 0 -4px 16px rgba(0,0,0,.1);
+  padding: .65rem 1rem calc(.65rem + env(safe-area-inset-bottom));
+  z-index: 30;
+}
+
+@media (max-width: 991px) {
+  .billing-shell { display: block; }
+  .billing-pane { display: none; }
+  .billing-pane.active { display: block; }
+  .billing-tabs {
+    display: flex;
+    gap: .4rem;
+    margin-bottom: .75rem;
+    position: sticky;
+    top: 0;
+    background: var(--bo-bg);
+    padding: .4rem 0;
+    z-index: 15;
+  }
+  .billing-tabs .tab-btn {
+    flex: 1;
+    text-align: center;
+    padding: .6rem;
+    border-radius: 10px;
+    border: 1px solid var(--bo-border);
+    background: #fff;
+    font-weight: 600;
+    position: relative;
+  }
+  .billing-tabs .tab-btn.active { background: var(--bo-primary); color: #fff; border-color: var(--bo-primary); }
+  .billing-tabs .tab-count {
+    display: inline-block; margin-left: 6px; background: rgba(0,0,0,.12); border-radius: 10px;
+    padding: 0 7px; font-size: .75rem;
+  }
+  .billing-tabs .tab-btn.active .tab-count { background: rgba(255,255,255,.25); }
+
+  .billing-sticky-footer.visible { display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
+  /* Leave room at the bottom of the scrollable Items pane so the sticky
+     footer never covers the last row of items. */
+  #billingItemsPane { padding-bottom: 84px; }
+}
+
+@media (min-width: 992px) {
+  .billing-pane { display: block !important; }
+}
+
+/* ---------- Mobile-first overrides ---------- */
 @media (max-width: 576px) {
   main .container-fluid { padding-left: .65rem; padding-right: .65rem; }
   .bo-card { padding: 1rem; border-radius: 12px; }

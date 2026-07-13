@@ -8,8 +8,13 @@
 
 @Html.AntiForgeryToken()
 
-<div class="pos-grid">
-    <div>
+<div class="billing-tabs">
+    <div class="tab-btn active" id="tabItemsBtn" onclick="switchTab('items')"><i class="fa-solid fa-magnifying-glass"></i> Items</div>
+    <div class="tab-btn" id="tabCartBtn" onclick="switchTab('cart')"><i class="fa-solid fa-cart-shopping"></i> Cart <span class="tab-count" id="cartCountBadge">0</span></div>
+</div>
+
+<div class="billing-shell">
+    <div class="billing-pane active" id="billingItemsPane">
         <div class="bo-card mb-3">
             <input id="itemSearch" class="form-control form-control-lg" placeholder="Search by name, code, or scan barcode..." autofocus />
         </div>
@@ -17,8 +22,9 @@
             @foreach (var i in items)
             {
                 <div class="col-6 col-md-4 col-lg-3">
-                    <div class="pos-item-card"
+                    <div class="pos-item-card" data-item-id="@i.Id"
                          onclick="addToCart(@i.Id, '@i.Name.Replace("'", "\\'")', @i.SellingPrice.ToString(System.Globalization.CultureInfo.InvariantCulture), @i.GstPercent.ToString(System.Globalization.CultureInfo.InvariantCulture))">
+                        <span class="pos-item-in-cart-badge" style="display:none;">0</span>
                         @if (!string.IsNullOrEmpty(i.ImagePath))
                         {
                             <img src="@i.ImagePath" class="pos-item-thumb" alt="@i.Name" />
@@ -36,28 +42,28 @@
         </div>
     </div>
 
-    <div>
+    <div class="billing-pane" id="billingCartPane">
         <div class="bo-card">
-            <h5 class="mb-3"><i class="fa-solid fa-cart-shopping"></i> Current Bill</h5>
+            <h5 class="mb-3 d-none d-lg-block"><i class="fa-solid fa-cart-shopping"></i> Current Bill</h5>
 
             <div class="mb-2">
                 <label class="form-label small mb-1">Customer</label>
                 <div class="d-flex gap-1">
-                    <select id="customerSelect" class="form-select form-select-sm">
+                    <select id="customerSelect" class="form-select">
                         <option value="">Walk-in Customer</option>
                         @foreach (var c in customers)
                         {
                             <option value="@c.Id">@c.Name @(string.IsNullOrEmpty(c.Phone) ? "" : $"({c.Phone})")</option>
                         }
                     </select>
-                    <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="modal" data-bs-target="#newCustomerModal" title="Add new customer">
+                    <button class="btn btn-outline-primary" type="button" data-bs-toggle="modal" data-bs-target="#newCustomerModal" title="Add new customer">
                         <i class="fa-solid fa-user-plus"></i>
                     </button>
                 </div>
             </div>
 
-            <div id="cartLines" style="max-height:300px; overflow-y:auto;">
-                <p class="text-muted small" id="emptyCartMsg">No items added yet.</p>
+            <div id="cartLines" style="max-height:38vh; overflow-y:auto;">
+                <p class="text-muted small" id="emptyCartMsg">No items added yet. Switch to Items to start a bill.</p>
             </div>
 
             <hr />
@@ -73,7 +79,7 @@
             }
             <div class="mb-2 mt-2">
                 <label class="form-label small mb-1">Overall Discount (₹)</label>
-                <input id="overallDiscount" type="number" min="0" value="0" class="form-control form-control-sm" oninput="renderCart()" />
+                <input id="overallDiscount" type="number" min="0" value="0" class="form-control" oninput="renderCart()" />
             </div>
             <div class="d-flex justify-content-between fw-bold fs-5 mt-2">
                 <span>Total</span><span id="grandTotal">₹0.00</span>
@@ -81,7 +87,7 @@
 
             <div class="mb-2 mt-3">
                 <label class="form-label small mb-1">Payment Mode</label>
-                <select id="paymentMode" class="form-select form-select-sm">
+                <select id="paymentMode" class="form-select">
                     @foreach (var p in paymentModes)
                     {
                         <option value="@p.Id">@p.Name</option>
@@ -92,9 +98,19 @@
             <div class="d-grid gap-2 mt-3">
                 <button class="btn btn-primary btn-lg" onclick="checkout(false)"><i class="fa-solid fa-check"></i> Complete Sale</button>
                 <button class="btn btn-outline-secondary" onclick="checkout(true)"><i class="fa-solid fa-pause"></i> Hold Bill</button>
+                <button class="btn btn-outline-secondary d-lg-none" onclick="switchTab('items')"><i class="fa-solid fa-arrow-left"></i> Back to Items</button>
             </div>
         </div>
     </div>
+</div>
+
+<!-- Sticky mobile summary bar - visible on the Items tab whenever the cart has something in it -->
+<div class="billing-sticky-footer" id="stickyFooter" onclick="switchTab('cart')">
+    <div>
+        <div class="fw-bold" id="stickyItemCount">0 items</div>
+        <div class="text-muted small" id="stickyTotal">₹0.00</div>
+    </div>
+    <button class="btn btn-primary"><i class="fa-solid fa-cart-shopping"></i> View Cart</button>
 </div>
 
 <!-- Quick "Create Customer" popup -- lets the cashier add a walk-in as a
@@ -131,21 +147,50 @@
 @section Scripts {
 <script>
 let cart = [];
+let currentTab = 'items';
 const gstEnabled = @Html.Raw(gstEnabled.ToString().ToLower());
 
+// ---------- Mobile tab switching ----------
+function switchTab(tab) {
+    currentTab = tab;
+    document.getElementById('billingItemsPane').classList.toggle('active', tab === 'items');
+    document.getElementById('billingCartPane').classList.toggle('active', tab === 'cart');
+    document.getElementById('tabItemsBtn').classList.toggle('active', tab === 'items');
+    document.getElementById('tabCartBtn').classList.toggle('active', tab === 'cart');
+    updateStickyFooter();
+    if (tab === 'items') window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function updateStickyFooter() {
+    const footer = document.getElementById('stickyFooter');
+    const show = currentTab === 'items' && cart.length > 0 && window.innerWidth < 992;
+    footer.classList.toggle('visible', show);
+}
+window.addEventListener('resize', updateStickyFooter);
+
+// ---------- Cart ----------
 function addToCart(id, name, price, gstPercent) {
     const existing = cart.find(l => l.itemId === id);
     if (existing) { existing.quantity += 1; }
     else { cart.push({ itemId: id, name: name, unitPrice: price, quantity: 1, discount: 0, gstPercent: gstPercent }); }
     renderCart();
+    syncItemCardBadges();
 }
 
-function removeLine(idx) { cart.splice(idx, 1); renderCart(); }
+function removeLine(idx) { cart.splice(idx, 1); renderCart(); syncItemCardBadges(); }
+
+function stepQty(idx, delta) {
+    const newQty = Math.round((cart[idx].quantity + delta) * 100) / 100;
+    if (newQty <= 0) { cart.splice(idx, 1); } else { cart[idx].quantity = newQty; }
+    renderCart();
+    syncItemCardBadges();
+}
 
 function updateQty(idx, qty) {
     qty = parseFloat(qty);
     if (isNaN(qty) || qty <= 0) { cart.splice(idx, 1); } else { cart[idx].quantity = qty; }
     renderCart();
+    syncItemCardBadges();
 }
 
 function updateDiscount(idx, discount) {
@@ -160,48 +205,70 @@ function updatePrice(idx, price) {
     renderCart();
 }
 
+function toggleLineDetails(idx) {
+    document.getElementById('lineDetails_' + idx)?.classList.toggle('expanded');
+}
+
+// Reflects current cart quantities as small badges on browsed item cards,
+// so it's obvious at a glance what's already been added while scanning more.
+function syncItemCardBadges() {
+    document.querySelectorAll('.pos-item-card').forEach(card => {
+        const id = parseInt(card.dataset.itemId);
+        const line = cart.find(l => l.itemId === id);
+        const badge = card.querySelector('.pos-item-in-cart-badge');
+        if (!badge) return;
+        if (line) { badge.style.display = 'flex'; badge.innerText = line.quantity; }
+        else { badge.style.display = 'none'; }
+    });
+}
+
 function renderCart() {
     const container = document.getElementById('cartLines');
 
     if (cart.length === 0) {
-        container.innerHTML = '<p class="text-muted small" id="emptyCartMsg">No items added yet.</p>';
+        container.innerHTML = '<p class="text-muted small" id="emptyCartMsg">No items added yet. Switch to Items to start a bill.</p>';
         document.getElementById('subTotal').innerText = '₹0.00';
         if (document.getElementById('taxTotal')) document.getElementById('taxTotal').innerText = '₹0.00';
         document.getElementById('grandTotal').innerText = '₹0.00';
+        document.getElementById('cartCountBadge').innerText = '0';
+        updateStickyFooter();
         return;
     }
 
-    let subTotal = 0, taxTotal = 0;
-    let html = '';
+    let subTotal = 0, taxTotal = 0, totalQty = 0, html = '';
 
     cart.forEach((line, idx) => {
         const lineBase = (line.unitPrice * line.quantity) - line.discount;
         const lineTax = gstEnabled ? (lineBase * line.gstPercent / 100) : 0;
         subTotal += lineBase;
         taxTotal += lineTax;
+        totalQty += line.quantity;
 
         html += `
             <div class="pos-cart-line">
-                <div class="d-flex justify-content-between">
+                <div class="d-flex justify-content-between align-items-start">
                     <span class="fw-semibold">${line.name}</span>
-                    <button class="btn btn-sm btn-link text-danger p-0" onclick="removeLine(${idx})"><i class="fa-solid fa-xmark"></i></button>
+                    <button class="btn btn-sm btn-link text-danger p-0" onclick="removeLine(${idx})"><i class="fa-solid fa-trash"></i></button>
                 </div>
-                <div class="d-flex align-items-center gap-1 mt-1">
-                    <div>
-                        <label class="text-muted" style="font-size:10px;">Qty</label>
-                        <input type="number" min="0.01" step="0.01" value="${line.quantity}" class="form-control form-control-sm" style="width:60px" onchange="updateQty(${idx}, this.value)" />
+                <div class="d-flex justify-content-between align-items-center mt-2 flex-wrap gap-2">
+                    <div class="qty-stepper">
+                        <button type="button" onclick="stepQty(${idx}, -1)">−</button>
+                        <input type="number" value="${line.quantity}" onchange="updateQty(${idx}, this.value)" />
+                        <button type="button" onclick="stepQty(${idx}, 1)">+</button>
                     </div>
-                    <div>
-                        <label class="text-muted" style="font-size:10px;">Price</label>
-                        <input type="number" min="0" step="0.01" value="${line.unitPrice}" class="form-control form-control-sm" style="width:75px" onchange="updatePrice(${idx}, this.value)" />
-                    </div>
-                    <div>
-                        <label class="text-muted" style="font-size:10px;">Discount</label>
-                        <input type="number" min="0" step="0.01" value="${line.discount}" class="form-control form-control-sm" style="width:70px" onchange="updateDiscount(${idx}, this.value)" />
-                    </div>
-                    <div class="ms-auto text-end">
-                        <label class="text-muted d-block" style="font-size:10px;">Line Total</label>
-                        <span class="fw-semibold">₹${(lineBase + lineTax).toFixed(2)}</span>
+                    <span class="fw-bold">₹${(lineBase + lineTax).toFixed(2)}</span>
+                </div>
+                <div class="mt-1">
+                    <span class="billing-line-toggle" onclick="toggleLineDetails(${idx})"><i class="fa-solid fa-sliders"></i> Edit price / discount</span>
+                    <div class="billing-line-details gap-2 mt-2" id="lineDetails_${idx}">
+                        <div class="flex-fill">
+                            <label class="text-muted d-block" style="font-size:10px;">Unit Price</label>
+                            <input type="number" min="0" step="0.01" value="${line.unitPrice}" class="form-control form-control-sm" onchange="updatePrice(${idx}, this.value)" />
+                        </div>
+                        <div class="flex-fill">
+                            <label class="text-muted d-block" style="font-size:10px;">Line Discount</label>
+                            <input type="number" min="0" step="0.01" value="${line.discount}" class="form-control form-control-sm" onchange="updateDiscount(${idx}, this.value)" />
+                        </div>
                     </div>
                 </div>
             </div>`;
@@ -216,6 +283,11 @@ function renderCart() {
     document.getElementById('subTotal').innerText = '₹' + subTotal.toFixed(2);
     if (document.getElementById('taxTotal')) document.getElementById('taxTotal').innerText = '₹' + taxTotal.toFixed(2);
     document.getElementById('grandTotal').innerText = '₹' + grandTotal.toFixed(2);
+    document.getElementById('cartCountBadge').innerText = cart.length;
+
+    document.getElementById('stickyItemCount').innerText = totalQty + (totalQty === 1 ? ' item' : ' items');
+    document.getElementById('stickyTotal').innerText = '₹' + grandTotal.toFixed(2);
+    updateStickyFooter();
 }
 
 document.getElementById('itemSearch').addEventListener('input', async function () {
@@ -231,7 +303,8 @@ document.getElementById('itemSearch').addEventListener('input', async function (
             : `<div class="pos-item-thumb pos-item-thumb-placeholder"><i class="fa-solid fa-image"></i></div>`;
         grid.innerHTML += `
             <div class="col-6 col-md-4 col-lg-3">
-                <div class="pos-item-card" onclick="addToCart(${i.id}, '${i.name.replace("'", "\\'")}', ${i.sellingPrice}, ${i.gstPercent})">
+                <div class="pos-item-card" data-item-id="${i.id}" onclick="addToCart(${i.id}, '${i.name.replace("'", "\\'")}', ${i.sellingPrice}, ${i.gstPercent})">
+                    <span class="pos-item-in-cart-badge" style="display:none;">0</span>
                     ${thumb}
                     <div class="fw-semibold">${i.name}</div>
                     <div class="text-muted small">Stock: ${i.currentStock}</div>
@@ -239,6 +312,7 @@ document.getElementById('itemSearch').addEventListener('input', async function (
                 </div>
             </div>`;
     });
+    syncItemCardBadges();
 });
 
 function getAntiForgeryToken() {
@@ -299,7 +373,7 @@ async function checkout(hold) {
         const result = await res.json();
         if (hold) {
             alert('Bill held as ' + result.invoiceNumber);
-            cart = []; renderCart();
+            cart = []; renderCart(); syncItemCardBadges();
         } else {
             window.location.href = '/POS/Print/' + result.saleId;
         }
