@@ -38,6 +38,7 @@ public class BillOraDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<Purchase> Purchases => Set<Purchase>();
     public DbSet<PurchaseItem> PurchaseItems => Set<PurchaseItem>();
     public DbSet<InventoryTransaction> InventoryTransactions => Set<InventoryTransaction>();
+    public DbSet<StockBatch> StockBatches => Set<StockBatch>();
     public DbSet<AccountTransaction> AccountTransactions => Set<AccountTransaction>();
     public DbSet<SalesReturn> SalesReturns => Set<SalesReturn>();
     public DbSet<SalesReturnItem> SalesReturnItems => Set<SalesReturnItem>();
@@ -46,6 +47,7 @@ public class BillOraDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<ApplicationSetting> ApplicationSettings => Set<ApplicationSetting>();
     public DbSet<PrinterSetting> PrinterSettings => Set<PrinterSetting>();
     public DbSet<EmailSettings> EmailSettingsEntries => Set<EmailSettings>();
+    public DbSet<InvoiceSettings> InvoiceSettingsEntries => Set<InvoiceSettings>();
     public DbSet<StaffModulePermission> StaffModulePermissions => Set<StaffModulePermission>();
 
     protected override void OnModelCreating(ModelBuilder builder)
@@ -77,11 +79,13 @@ public class BillOraDbContext : IdentityDbContext<ApplicationUser>
         builder.Entity<Sale>().HasQueryFilter(e => !e.IsDeleted && (_tenant == null || _tenant.IsDeveloper || e.StoreId == _tenant.StoreId));
         builder.Entity<Purchase>().HasQueryFilter(e => !e.IsDeleted && (_tenant == null || _tenant.IsDeveloper || e.StoreId == _tenant.StoreId));
         builder.Entity<InventoryTransaction>().HasQueryFilter(e => !e.IsDeleted && (_tenant == null || _tenant.IsDeveloper || e.StoreId == _tenant.StoreId));
+        builder.Entity<StockBatch>().HasQueryFilter(e => !e.IsDeleted && (_tenant == null || _tenant.IsDeveloper || e.StoreId == _tenant.StoreId));
         builder.Entity<AccountTransaction>().HasQueryFilter(e => !e.IsDeleted && (_tenant == null || _tenant.IsDeveloper || e.StoreId == _tenant.StoreId));
         builder.Entity<SalesReturn>().HasQueryFilter(e => !e.IsDeleted && (_tenant == null || _tenant.IsDeveloper || e.StoreId == _tenant.StoreId));
         builder.Entity<ApplicationSetting>().HasQueryFilter(e => !e.IsDeleted && (_tenant == null || _tenant.IsDeveloper || e.StoreId == _tenant.StoreId));
         builder.Entity<PrinterSetting>().HasQueryFilter(e => !e.IsDeleted && (_tenant == null || _tenant.IsDeveloper || e.StoreId == _tenant.StoreId));
         builder.Entity<EmailSettings>().HasQueryFilter(e => !e.IsDeleted && (_tenant == null || _tenant.IsDeveloper || e.StoreId == _tenant.StoreId));
+        builder.Entity<InvoiceSettings>().HasQueryFilter(e => !e.IsDeleted && (_tenant == null || _tenant.IsDeveloper || e.StoreId == _tenant.StoreId));
         builder.Entity<StaffModulePermission>().HasQueryFilter(e => !e.IsDeleted && (_tenant == null || _tenant.IsDeveloper || e.StoreId == _tenant.StoreId));
 
         // ---- Relationships that would otherwise cascade-delete across tenants ----
@@ -181,6 +185,12 @@ public class BillOraDbContext : IdentityDbContext<ApplicationUser>
             .HasForeignKey(sri => sri.ItemId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        builder.Entity<StockBatch>()
+            .HasOne(b => b.Item)
+            .WithMany()
+            .HasForeignKey(b => b.ItemId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         // ---- Useful uniqueness / indexes ----
         builder.Entity<Item>().HasIndex(i => new { i.StoreId, i.ItemCode });
         builder.Entity<Item>().HasIndex(i => new { i.StoreId, i.Barcode });
@@ -188,5 +198,6 @@ public class BillOraDbContext : IdentityDbContext<ApplicationUser>
         builder.Entity<Company>().HasIndex(c => c.LicenseKey).IsUnique();
         builder.Entity<StaffModulePermission>().HasIndex(p => new { p.ApplicationUserId, p.ModuleKey }).IsUnique();
         builder.Entity<AccountTransaction>().HasIndex(t => new { t.StoreId, t.TransactionDate });
+        builder.Entity<StockBatch>().HasIndex(b => new { b.StoreId, b.ItemId, b.ExpiryDate });
     }
 }

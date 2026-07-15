@@ -31,6 +31,8 @@ public class ItemsController : Controller
         if (!string.IsNullOrWhiteSpace(search))
             query = query.Where(i => i.Name.Contains(search) || (i.ItemCode ?? "").Contains(search));
 
+        var store = await _db.Stores.FindAsync(_tenant.StoreId ?? 0);
+        ViewBag.BatchTrackingEnabled = store?.BatchTrackingEnabled ?? false;
         ViewBag.Search = search;
         return View(await query.OrderBy(i => i.Name).ToListAsync());
     }
@@ -106,6 +108,7 @@ public class ItemsController : Controller
         existing.UnitId = item.UnitId;
         existing.HsnCode = item.HsnCode;
         existing.GstPercent = item.GstPercent;
+        existing.PriceType = item.PriceType;
         existing.PurchasePrice = item.PurchasePrice;
         existing.SellingPrice = item.SellingPrice;
         existing.MinSellingPrice = item.MinSellingPrice;
@@ -144,6 +147,8 @@ public class ItemsController : Controller
 
     private async Task PopulateDropdownsAsync()
     {
+        var store = await _db.Stores.FindAsync(_tenant.StoreId ?? 0);
+        ViewBag.GstEnabled = store?.GstEnabled ?? true;
         ViewBag.Categories = await _db.Categories.OrderBy(c => c.Name).ToListAsync();
         ViewBag.Units = await _db.Units.OrderBy(u => u.Name).ToListAsync();
     }

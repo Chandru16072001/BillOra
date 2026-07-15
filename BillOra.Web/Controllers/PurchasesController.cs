@@ -41,6 +41,8 @@ public class PurchasesController : Controller
 
     public async Task<IActionResult> Create()
     {
+        var store = await _db.Stores.FindAsync(_tenant.StoreId ?? 0);
+        ViewBag.BatchTrackingEnabled = store?.BatchTrackingEnabled ?? false;
         ViewBag.Vendors = await _db.Vendors.Where(v => v.IsActive).OrderBy(v => v.Name).ToListAsync();
         ViewBag.Items = await _db.Items.Where(i => i.IsActive).OrderBy(i => i.Name).ToListAsync();
         return View();
@@ -68,6 +70,7 @@ public class PurchasesController : Controller
         if (vendor == null) return BadRequest("Vendor not found.");
 
         var storeId = _tenant.StoreId ?? 0;
+        var store = await _db.Stores.FindAsync(storeId);
 
         var purchase = new Purchase
         {
@@ -99,13 +102,21 @@ public class PurchasesController : Controller
                 UnitPrice = line.UnitPrice,
                 Discount = line.Discount,
                 GstPercent = line.GstPercent,
-                LineTotal = lineBase + lineTax
+                LineTotal = lineBase + lineTax,
+                BatchNumber = line.BatchNumber,
+                ManufactureDate = line.ManufactureDate,
+                ExpiryDate = line.ExpiryDate,
+                SupplierBatchNumber = line.SupplierBatchNumber,
+                SellingRate = line.SellingRate,
+                BatchRemarks = line.BatchRemarks
             });
 
             // Receiving stock via GRN increases on-hand quantity and is logged
             // to the same inventory ledger the POS module debits from.
             item.CurrentStock += line.Quantity;
             item.PurchasePrice = line.UnitPrice; // keep last purchase price current
+            if (line.SellingRate.HasValue) item.SellingPrice = line.SellingRate.Value;
+
             _db.InventoryTransactions.Add(new InventoryTransaction
             {
                 StoreId = storeId,
@@ -113,8 +124,27 @@ public class PurchasesController : Controller
                 TransactionType = InventoryTransactionType.Purchase,
                 Quantity = line.Quantity,
                 BalanceAfter = item.CurrentStock,
-                Notes = $"GRN {purchase.InvoiceNumber}"
+                Notes = $"GRN {purchase.InvoiceNumber}" + (line.BatchNumber != null ? $" (batch {line.BatchNumber})" : "")
             });
+
+            if (store?.BatchTrackingEnabled == true && !string.IsNullOrWhiteSpace(line.BatchNumber))
+            {
+                _db.StockBatches.Add(new StockBatch
+                {
+                    StoreId = storeId,
+                    ItemId = item.Id,
+                    BatchNumber = line.BatchNumber,
+                    ManufactureDate = line.ManufactureDate,
+                    ExpiryDate = line.ExpiryDate,
+                    SupplierBatchNumber = line.SupplierBatchNumber,
+                    PurchaseRate = line.UnitPrice,
+                    SellingRate = line.SellingRate ?? item.SellingPrice,
+                    Quantity = line.Quantity,
+                    RemainingQuantity = line.Quantity,
+                    Remarks = line.BatchRemarks,
+                    SourceModule = "GRN"
+                });
+            }
         }
 
         purchase.SubTotal = subTotal;

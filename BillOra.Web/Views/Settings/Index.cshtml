@@ -10,6 +10,11 @@
 
 <h3 class="mb-4">Settings</h3>
 
+<div class="d-flex gap-2 mb-3 flex-wrap">
+    <a href="/Store" class="btn btn-outline-primary btn-sm"><i class="fa-solid fa-shop"></i> Store Information</a>
+    <a href="/InvoiceConfig" class="btn btn-outline-primary btn-sm"><i class="fa-solid fa-file-invoice"></i> Sales Invoice Configuration</a>
+</div>
+
 @if (TempData["Success"] != null)
 {
     <div class="alert alert-success py-2">@TempData["Success"]</div>
@@ -28,6 +33,25 @@
                 <button class="btn @(store.GstEnabled ? "btn-success" : "btn-outline-secondary")" type="submit">
                     GST is currently <strong>@(store.GstEnabled ? "ENABLED" : "DISABLED")</strong> — click to toggle
                 </button>
+            </form>
+        </div>
+
+        <div class="bo-card mb-3">
+            <h5>Billing Behavior</h5>
+            <p class="text-muted small mb-2">Stock Validation</p>
+            <form asp-action="ToggleStockValidation" method="post" class="mb-3">
+                <button class="btn btn-sm @(store.StockValidationEnabled ? "btn-success" : "btn-outline-secondary")" type="submit">
+                    @(store.StockValidationEnabled ? "ENABLED" : "DISABLED") — click to toggle
+                </button>
+                <div class="form-text">When enabled, billing blocks a sale if there isn't enough stock on hand.</div>
+            </form>
+
+            <p class="text-muted small mb-2">Batch-wise Stock Tracking</p>
+            <form asp-action="ToggleBatchTracking" method="post">
+                <button class="btn btn-sm @(store.BatchTrackingEnabled ? "btn-success" : "btn-outline-secondary")" type="submit">
+                    @(store.BatchTrackingEnabled ? "ENABLED" : "DISABLED") — click to toggle
+                </button>
+                <div class="form-text">When enabled, GRN and Opening Stock capture batch/expiry details, and sales automatically draw from the nearest-expiry batch first.</div>
             </form>
         </div>
 

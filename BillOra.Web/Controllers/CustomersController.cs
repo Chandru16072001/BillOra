@@ -47,4 +47,37 @@ public class CustomersController : Controller
 
         return RedirectToAction(nameof(Index));
     }
+
+    public async Task<IActionResult> Edit(int id)
+    {
+        var customer = await _db.Customers.FindAsync(id);
+        if (customer == null) return NotFound();
+        return View(customer);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Edit(int id, Customer customer)
+    {
+        var existing = await _db.Customers.FindAsync(id);
+        if (existing == null) return NotFound();
+
+        existing.Name = customer.Name;
+        existing.Phone = customer.Phone;
+        existing.Email = customer.Email;
+        existing.GstNumber = customer.GstNumber;
+        existing.Address = customer.Address;
+        existing.District = customer.District;
+        existing.Taluk = customer.Taluk;
+        existing.State = customer.State;
+        existing.Country = customer.Country;
+        existing.PinCode = customer.PinCode;
+        existing.CreditLimit = customer.CreditLimit;
+        existing.IsActive = customer.IsActive;
+        existing.UpdatedAt = DateTime.UtcNow;
+
+        await _db.SaveChangesAsync();
+        TempData["Success"] = $"Updated {existing.Name}.";
+        return RedirectToAction(nameof(Index));
+    }
 }

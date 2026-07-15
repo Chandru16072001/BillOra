@@ -2,6 +2,7 @@
     ViewData["Title"] = "Opening Stock Entry";
     var items = (IEnumerable<Item>)ViewBag.Items;
     var recent = (IEnumerable<InventoryTransaction>)ViewBag.RecentEntries;
+    bool batchTrackingEnabled = ViewBag.BatchTrackingEnabled;
 }
 
 <h3 class="mb-4">Opening Stock Entry</h3>
@@ -16,7 +17,7 @@
     <div class="alert alert-danger py-2">@TempData["Error"]</div>
 }
 
-<div class="bo-card mb-4" style="max-width:600px;">
+<div class="bo-card mb-4" style="max-width:640px;">
     <form asp-action="OpeningStock" method="post">
         <div class="mb-3">
             <label class="form-label">Item</label>
@@ -36,7 +37,36 @@
             <label class="form-label">Notes (optional)</label>
             <input name="notes" class="form-control" placeholder="e.g. initial stock load" />
         </div>
-        <button class="btn btn-primary" type="submit">Add Stock</button>
+
+        @if (batchTrackingEnabled)
+        {
+            <hr />
+            <p class="text-muted small mb-2"><i class="fa-solid fa-layer-group"></i> Batch Tracking is enabled — record batch details for this stock.</p>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label">Batch Number</label>
+                    <input name="batchNumber" class="form-control" placeholder="e.g. BATCH0012" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Manufacture Date</label>
+                    <input name="manufactureDate" type="date" class="form-control" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Expiry Date</label>
+                    <input name="expiryDate" type="date" class="form-control" />
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Purchase Rate</label>
+                    <input name="purchaseRate" type="number" step="0.01" class="form-control" />
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Selling Rate</label>
+                    <input name="sellingRate" type="number" step="0.01" class="form-control" />
+                </div>
+            </div>
+        }
+
+        <button class="btn btn-primary mt-3" type="submit">Add Stock</button>
     </form>
 </div>
 

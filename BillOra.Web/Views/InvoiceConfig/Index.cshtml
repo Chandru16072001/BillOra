@@ -1,0 +1,108 @@
+@using BillOra.Domain.Enums
+@model InvoiceSettings
+@{ ViewData["Title"] = "Sales Invoice Configuration"; }
+
+<h3 class="mb-4">Sales Invoice Configuration</h3>
+<p class="text-muted">Controls exactly what prints on every invoice — both A4 and Thermal formats respect these settings.</p>
+
+@if (TempData["Success"] != null) { <div class="alert alert-success py-2">@TempData["Success"]</div> }
+
+<div class="bo-card" style="max-width:900px;">
+    <form asp-action="Save" method="post">
+        <div class="row g-3 mb-3">
+            <div class="col-md-6">
+                <label class="form-label">Invoice Heading</label>
+                <select name="invoiceHeading" class="form-select" id="headingSelect" onchange="toggleCustomHeading(this.value)">
+                    @foreach (var heading in new[] { "Tax Invoice", "GST Invoice", "Invoice", "Retail Invoice" })
+                    {
+                        <option value="@heading" selected="@(Model.InvoiceHeading == heading)">@heading</option>
+                    }
+                    <option value="__custom__" selected="@(!new[] { "Tax Invoice", "GST Invoice", "Invoice", "Retail Invoice" }.Contains(Model.InvoiceHeading))">Custom...</option>
+                </select>
+                <input type="text" id="customHeadingInput" name="invoiceHeadingCustom" value="@Model.InvoiceHeading"
+                       class="form-control mt-2" placeholder="Custom heading text" style="display:none;" />
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-md-6">
+                <h6 class="text-muted">Store Details to Print</h6>
+                <div class="form-check"><input class="form-check-input" type="checkbox" name="showStoreName" value="true" checked="@Model.ShowStoreName" id="ssn" /><label class="form-check-label" for="ssn">Store Name</label></div>
+                <div class="form-check"><input class="form-check-input" type="checkbox" name="showStoreAddress" value="true" checked="@Model.ShowStoreAddress" id="ssa" /><label class="form-check-label" for="ssa">Address</label></div>
+                <div class="form-check"><input class="form-check-input" type="checkbox" name="showStorePhone" value="true" checked="@Model.ShowStorePhone" id="ssp" /><label class="form-check-label" for="ssp">Phone</label></div>
+                <div class="form-check"><input class="form-check-input" type="checkbox" name="showStoreEmail" value="true" checked="@Model.ShowStoreEmail" id="sse" /><label class="form-check-label" for="sse">Email</label></div>
+                <div class="form-check"><input class="form-check-input" type="checkbox" name="showStoreGst" value="true" checked="@Model.ShowStoreGst" id="ssg" /><label class="form-check-label" for="ssg">GST Number</label></div>
+                <div class="form-check"><input class="form-check-input" type="checkbox" name="showStoreLogo" value="true" checked="@Model.ShowStoreLogo" id="ssl" /><label class="form-check-label" for="ssl">Logo</label></div>
+            </div>
+            <div class="col-md-6">
+                <h6 class="text-muted">Customer Details to Print</h6>
+                <div class="form-check"><input class="form-check-input" type="checkbox" name="showCustomerName" value="true" checked="@Model.ShowCustomerName" id="scn" /><label class="form-check-label" for="scn">Name</label></div>
+                <div class="form-check"><input class="form-check-input" type="checkbox" name="showCustomerPhone" value="true" checked="@Model.ShowCustomerPhone" id="scp" /><label class="form-check-label" for="scp">Phone</label></div>
+                <div class="form-check"><input class="form-check-input" type="checkbox" name="showCustomerAddress" value="true" checked="@Model.ShowCustomerAddress" id="sca" /><label class="form-check-label" for="sca">Address</label></div>
+                <div class="form-check"><input class="form-check-input" type="checkbox" name="showCustomerGst" value="true" checked="@Model.ShowCustomerGst" id="scg" /><label class="form-check-label" for="scg">GST Number</label></div>
+            </div>
+        </div>
+
+        <hr />
+        <h6 class="text-muted">Content</h6>
+        <div class="row g-2 mb-3">
+            <div class="col-md-4">
+                <div class="form-check"><input class="form-check-input" type="checkbox" name="showGstDetails" value="true" checked="@Model.ShowGstDetails" id="sgd" /><label class="form-check-label" for="sgd">Print GST breakdown (Taxable / CGST / SGST / IGST)</label></div>
+            </div>
+            <div class="col-md-4">
+                <div class="form-check"><input class="form-check-input" type="checkbox" name="showQrCode" value="true" checked="@Model.ShowQrCode" id="sqr" /><label class="form-check-label" for="sqr">Print QR code</label></div>
+            </div>
+            <div class="col-md-4">
+                <div class="form-check"><input class="form-check-input" type="checkbox" name="showTermsAndConditions" value="true" checked="@Model.ShowTermsAndConditions" id="stc" /><label class="form-check-label" for="stc">Print Terms &amp; Conditions</label></div>
+            </div>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Terms &amp; Conditions Text</label>
+            <textarea name="termsAndConditionsText" class="form-control" rows="2">@Model.TermsAndConditionsText</textarea>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Footer Message</label>
+            <input name="footerMessage" value="@Model.FooterMessage" class="form-control" />
+        </div>
+
+        <hr />
+        <h6 class="text-muted">Print Defaults</h6>
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label">Printer Type</label>
+                <select name="defaultPrinterType" class="form-select">
+                    <option value="@PrinterType.Thermal80mm" selected="@(Model.DefaultPrinterType == PrinterType.Thermal80mm)">Thermal 80mm</option>
+                    <option value="@PrinterType.Thermal58mm" selected="@(Model.DefaultPrinterType == PrinterType.Thermal58mm)">Thermal 58mm</option>
+                    <option value="@PrinterType.A4" selected="@(Model.DefaultPrinterType == PrinterType.A4)">A4</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Paper Size</label>
+                <input name="paperSize" value="@Model.PaperSize" class="form-control" placeholder="e.g. 80mm or A4" />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Number of Copies</label>
+                <input name="copies" type="number" min="1" value="@Model.Copies" class="form-control" />
+            </div>
+        </div>
+
+        <button class="btn btn-primary mt-4" type="submit">Save Configuration</button>
+    </form>
+</div>
+
+<script>
+function toggleCustomHeading(value) {
+    const input = document.getElementById('customHeadingInput');
+    input.style.display = value === '__custom__' ? 'block' : 'none';
+}
+toggleCustomHeading(document.getElementById('headingSelect').value);
+
+// If "Custom..." is chosen, submit the free-text value as invoiceHeading instead.
+document.querySelector('form').addEventListener('submit', function () {
+    const select = document.getElementById('headingSelect');
+    if (select.value === '__custom__') {
+        select.name = '';
+        document.getElementById('customHeadingInput').name = 'invoiceHeading';
+    }
+});
+</script>

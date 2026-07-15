@@ -16,6 +16,14 @@ public class CreateGrnLineRequest
     public decimal UnitPrice { get; set; }
     public decimal Discount { get; set; }
     public decimal GstPercent { get; set; }
+
+    // Only used when the store has Batch Tracking enabled.
+    public string? BatchNumber { get; set; }
+    public DateTime? ManufactureDate { get; set; }
+    public DateTime? ExpiryDate { get; set; }
+    public string? SupplierBatchNumber { get; set; }
+    public decimal? SellingRate { get; set; }
+    public string? BatchRemarks { get; set; }
 }
 
 public class GrnResultDto
@@ -32,4 +40,11 @@ public class OpeningStockRequest
     public int ItemId { get; set; }
     public decimal Quantity { get; set; }
     public string? Notes { get; set; }
+
+    // Only used when the store has Batch Tracking enabled.
+    public string? BatchNumber { get; set; }
+    public DateTime? ManufactureDate { get; set; }
+    public DateTime? ExpiryDate { get; set; }
+    public decimal? PurchaseRate { get; set; }
+    public decimal? SellingRate { get; set; }
 }

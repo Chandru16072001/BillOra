@@ -1,4 +1,5 @@
 using BillOra.Domain.Common;
+using BillOra.Domain.Enums;
 
 namespace BillOra.Domain.Entities;
 
@@ -43,6 +44,7 @@ public class Item : TenantEntity
 
     public string? HsnCode { get; set; }
     public decimal GstPercent { get; set; }
+    public GstPriceType PriceType { get; set; } = GstPriceType.Exclusive; // only meaningful when the store has GST enabled
 
     public decimal PurchasePrice { get; set; }
     public decimal SellingPrice { get; set; }
@@ -62,6 +64,11 @@ public class Customer : TenantEntity
     public string? Email { get; set; }
     public string? GstNumber { get; set; }
     public string? Address { get; set; }
+    public string? District { get; set; }
+    public string? Taluk { get; set; }
+    public string? State { get; set; } // compared against Store.State to decide CGST+SGST vs IGST
+    public string? Country { get; set; } = "India";
+    public string? PinCode { get; set; }
     public decimal CreditLimit { get; set; }
     public decimal OutstandingAmount { get; set; }
     public int LoyaltyPoints { get; set; }

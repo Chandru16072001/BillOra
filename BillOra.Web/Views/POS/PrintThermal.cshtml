@@ -2,29 +2,72 @@
 @{
     Layout = null;
     var store = (Store)ViewBag.Store;
+    var cfg = (InvoiceSettings)ViewBag.InvoiceSettings;
 }
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="utf-8" />
-    <title>Invoice @Model.InvoiceNumber</title>
+    <title>@cfg.InvoiceHeading @Model.InvoiceNumber</title>
     <style>
         body { font-family: 'Courier New', monospace; width: 300px; margin: 0 auto; font-size: 13px; }
-        h2, h4 { text-align: center; margin: 4px 0; }
+        h2, h3, h4 { text-align: center; margin: 4px 0; }
+        img.logo { display: block; margin: 0 auto 4px; max-height: 50px; }
         table { width: 100%; border-collapse: collapse; margin-top: 8px; }
         td, th { padding: 2px 0; }
         .right { text-align: right; }
         hr { border-top: 1px dashed #000; }
+        .gst-table td { font-size: 12px; }
+        .qr { display: block; margin: 8px auto; }
         @@media print { .no-print { display: none; } }
     </style>
 </head>
 <body onload="window.print()">
-    <h2>@store.Name</h2>
-    <p style="text-align:center;">@store.Address<br />@store.Phone</p>
+    @if (cfg.ShowStoreLogo && !string.IsNullOrEmpty(store.LogoPath))
+    {
+        <img class="logo" src="@store.LogoPath" />
+    }
+    <h3>@cfg.InvoiceHeading</h3>
+    @if (cfg.ShowStoreName) { <h2>@store.Name</h2> }
+    <p style="text-align:center;">
+        @if (cfg.ShowStoreAddress)
+        {
+            <text>@store.Address<br /></text>
+        }
+        @if (cfg.ShowStorePhone)
+        {
+            <text>@store.Phone<br /></text>
+        }
+        @if (cfg.ShowStoreEmail && !string.IsNullOrEmpty(store.Email))
+        {
+            <text>@store.Email<br /></text>
+        }
+        @if (cfg.ShowStoreGst && !string.IsNullOrEmpty(store.GstNumber))
+        {
+            <text>GSTIN: @store.GstNumber</text>
+        }
+    </p>
     <hr />
-    <p>Invoice: @Model.InvoiceNumber<br />
-       Date: @Model.SaleDate.ToLocalTime().ToString("dd MMM yyyy hh:mm tt")<br />
-       Customer: @(Model.Customer?.Name ?? "Walk-in")</p>
+    <p>
+        Invoice: @Model.InvoiceNumber<br />
+        Date: @Model.SaleDate.ToLocalTime().ToString("dd MMM yyyy hh:mm tt")<br />
+        @if (cfg.ShowCustomerName)
+        {
+            <text>Customer: @(Model.Customer?.Name ?? "Walk-in")<br /></text>
+        }
+        @if (cfg.ShowCustomerPhone && !string.IsNullOrEmpty(Model.Customer?.Phone))
+        {
+            <text>Phone: @Model.Customer.Phone<br /></text>
+        }
+        @if (cfg.ShowCustomerAddress && !string.IsNullOrEmpty(Model.Customer?.Address))
+        {
+            <text>Address: @Model.Customer.Address<br /></text>
+        }
+        @if (cfg.ShowCustomerGst && !string.IsNullOrEmpty(Model.Customer?.GstNumber))
+        {
+            <text>GSTIN: @Model.Customer.GstNumber<br /></text>
+        }
+    </p>
     <hr />
     <table>
         <thead><tr><th>Item</th><th class="right">Qty</th><th class="right">Amt</th></tr></thead>
@@ -42,10 +85,45 @@
     <hr />
     <p>Subtotal: <span class="right">@Model.SubTotal.ToString("N2")</span></p>
     <p>Discount: <span class="right">@Model.DiscountAmount.ToString("N2")</span></p>
-    <p>Tax: <span class="right">@Model.TaxAmount.ToString("N2")</span></p>
+
+    @if (cfg.ShowGstDetails && Model.TaxAmount > 0)
+    {
+        <hr />
+        <table class="gst-table">
+            <tr><td>Taxable Amount</td><td class="right">@Model.TaxableAmount.ToString("N2")</td></tr>
+            @if (Model.IsInterState)
+            {
+                <tr><td>IGST</td><td class="right">@Model.IgstAmount.ToString("N2")</td></tr>
+            }
+            else
+            {
+                <tr><td>CGST</td><td class="right">@Model.CgstAmount.ToString("N2")</td></tr>
+                <tr><td>SGST</td><td class="right">@Model.SgstAmount.ToString("N2")</td></tr>
+            }
+            <tr><td><strong>Total GST</strong></td><td class="right"><strong>@Model.TaxAmount.ToString("N2")</strong></td></tr>
+        </table>
+    }
+
+    <hr />
     <h4>Grand Total: ₹@Model.GrandTotal.ToString("N2")</h4>
     <hr />
-    <p style="text-align:center;">Thank you for shopping with us!</p>
+
+    @if (cfg.ShowQrCode)
+    {
+        <img class="qr" src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=@Uri.EscapeDataString($"Invoice {Model.InvoiceNumber} | {store.Name} | Total Rs.{Model.GrandTotal:N2}")" />
+    }
+
+    @if (cfg.ShowTermsAndConditions && !string.IsNullOrEmpty(cfg.TermsAndConditionsText))
+    {
+        <p style="font-size:11px;">@cfg.TermsAndConditionsText</p>
+        <hr />
+    }
+
+    @if (!string.IsNullOrEmpty(cfg.FooterMessage))
+    {
+        <p style="text-align:center;">@cfg.FooterMessage</p>
+    }
+
     <div class="no-print" style="text-align:center; margin-top:10px;">
         <a href="/POS">Back to POS</a>
     </div>

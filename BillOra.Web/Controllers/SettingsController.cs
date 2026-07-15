@@ -27,23 +27,30 @@ public class SettingsController : Controller
     }
 
     public async Task<IActionResult> Index()
-    {
-        var storeId = _tenant.StoreId ?? 0;
-        var store = await _db.Stores.FindAsync(storeId);
+{
+    var storeId = _tenant.StoreId ?? 0;
+    var store = await _db.Stores.FindAsync(storeId);
 
-        ViewBag.Store = store;
-       // ViewBag.Taxes = await _db.Taxes.OrderBy(t => t.Percentage).ToListAsync();
+    ViewBag.Store = store;
 
+    ViewBag.Taxes = (await _db.Taxes
+        .ToListAsync())
+        .OrderBy(t => t.Percentage)
+        .ToList();
 
-ViewBag.Taxes = (await _db.Taxes.ToListAsync())
-    .OrderBy(t => t.Percentage)
-    .ToList();
+    ViewBag.PaymentModes = await _db.PaymentModes
+        .OrderBy(p => p.Name)
+        .ToListAsync();
 
-        ViewBag.PaymentModes = await _db.PaymentModes.OrderBy(p => p.Name).ToListAsync();
-        ViewBag.PrinterSettings = await _db.PrinterSettings.OrderBy(p => p.Type).ToListAsync();
-        ViewBag.EmailSettings = await _db.EmailSettingsEntries.FirstOrDefaultAsync(e => e.StoreId == storeId);
-        return View();
-    }
+    ViewBag.PrinterSettings = await _db.PrinterSettings
+        .OrderBy(p => p.Type)
+        .ToListAsync();
+
+    ViewBag.EmailSettings = await _db.EmailSettingsEntries
+        .FirstOrDefaultAsync(e => e.StoreId == storeId);
+
+    return View();
+}
 
     [HttpPost]
     [ValidateAntiForgeryToken]
@@ -58,6 +65,32 @@ ViewBag.Taxes = (await _db.Taxes.ToListAsync())
         store.GstEnabled = !store.GstEnabled;
         await _db.SaveChangesAsync();
         TempData["Success"] = $"GST is now {(store.GstEnabled ? "enabled" : "disabled")} for this store.";
+        return RedirectToAction(nameof(Index));
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ToggleStockValidation()
+    {
+        var store = await _db.Stores.FindAsync(_tenant.StoreId ?? 0);
+        if (store == null) return RedirectToAction(nameof(Index));
+
+        store.StockValidationEnabled = !store.StockValidationEnabled;
+        await _db.SaveChangesAsync();
+        TempData["Success"] = $"Stock Validation is now {(store.StockValidationEnabled ? "enabled" : "disabled")}.";
+        return RedirectToAction(nameof(Index));
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ToggleBatchTracking()
+    {
+        var store = await _db.Stores.FindAsync(_tenant.StoreId ?? 0);
+        if (store == null) return RedirectToAction(nameof(Index));
+
+        store.BatchTrackingEnabled = !store.BatchTrackingEnabled;
+        await _db.SaveChangesAsync();
+        TempData["Success"] = $"Batch Tracking is now {(store.BatchTrackingEnabled ? "enabled" : "disabled")}.";
         return RedirectToAction(nameof(Index));
     }
 

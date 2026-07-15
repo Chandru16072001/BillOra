@@ -43,3 +43,10 @@ public enum TransactionDirection
     Credit,
     Debit
 }
+
+// Item Master - whether the entered selling price already includes GST.
+public enum GstPriceType
+{
+    Exclusive, // GST added on top of the entered price
+    Inclusive  // entered price already includes GST; GST is extracted from it
+}

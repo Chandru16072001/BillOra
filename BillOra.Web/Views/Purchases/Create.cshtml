@@ -1,6 +1,7 @@
 @{
     ViewData["Title"] = "New GRN";
     var vendors = (IEnumerable<Vendor>)ViewBag.Vendors;
+    bool batchTrackingEnabled = ViewBag.BatchTrackingEnabled;
 }
 @Html.AntiForgeryToken()
 
@@ -70,6 +71,7 @@
 <script>
 let cart = [];
 let currentTab = 'items';
+const batchTrackingEnabled = @Html.Raw(batchTrackingEnabled.ToString().ToLower());
 
 function switchTab(tab) {
     currentTab = tab;
@@ -91,7 +93,12 @@ window.addEventListener('resize', updateStickyFooter);
 function addToCart(id, name, price, gstPercent) {
     const existing = cart.find(l => l.itemId === id);
     if (existing) { existing.quantity += 1; }
-    else { cart.push({ itemId: id, name: name, unitPrice: price, quantity: 1, discount: 0, gstPercent: gstPercent }); }
+    else {
+        cart.push({
+            itemId: id, name: name, unitPrice: price, quantity: 1, discount: 0, gstPercent: gstPercent,
+            batchNumber: '', manufactureDate: '', expiryDate: '', supplierBatchNumber: '', sellingRate: '', batchRemarks: ''
+        });
+    }
     renderCart();
     syncItemCardBadges();
 }
@@ -113,6 +120,9 @@ function updatePrice(idx, price) {
     price = parseFloat(price);
     cart[idx].unitPrice = isNaN(price) ? 0 : price;
     renderCart();
+}
+function updateBatchField(idx, field, value) {
+    cart[idx][field] = value;
 }
 function toggleLineDetails(idx) {
     document.getElementById('lineDetails_' + idx)?.classList.toggle('expanded');
@@ -163,12 +173,37 @@ function renderCart() {
                     <span class="fw-bold">₹${(lineBase + lineTax).toFixed(2)}</span>
                 </div>
                 <div class="mt-1">
-                    <span class="billing-line-toggle" onclick="toggleLineDetails(${idx})"><i class="fa-solid fa-sliders"></i> Edit cost price</span>
-                    <div class="billing-line-details gap-2 mt-2" id="lineDetails_${idx}">
-                        <div class="flex-fill">
+                    <span class="billing-line-toggle" onclick="toggleLineDetails(${idx})"><i class="fa-solid fa-sliders"></i> ${batchTrackingEnabled ? 'Edit cost / batch details' : 'Edit cost price'}</span>
+                    <div class="billing-line-details gap-2 mt-2 flex-wrap" id="lineDetails_${idx}">
+                        <div class="flex-fill" style="min-width:100px;">
                             <label class="text-muted d-block" style="font-size:10px;">Unit Cost</label>
                             <input type="number" min="0" step="0.01" value="${line.unitPrice}" class="form-control form-control-sm" onchange="updatePrice(${idx}, this.value)" />
                         </div>
+                        ${batchTrackingEnabled ? `
+                        <div class="flex-fill" style="min-width:120px;">
+                            <label class="text-muted d-block" style="font-size:10px;">Batch Number *</label>
+                            <input type="text" value="${line.batchNumber}" class="form-control form-control-sm" onchange="updateBatchField(${idx}, 'batchNumber', this.value)" />
+                        </div>
+                        <div class="flex-fill" style="min-width:120px;">
+                            <label class="text-muted d-block" style="font-size:10px;">Supplier Batch No.</label>
+                            <input type="text" value="${line.supplierBatchNumber}" class="form-control form-control-sm" onchange="updateBatchField(${idx}, 'supplierBatchNumber', this.value)" />
+                        </div>
+                        <div class="flex-fill" style="min-width:120px;">
+                            <label class="text-muted d-block" style="font-size:10px;">Mfg Date</label>
+                            <input type="date" value="${line.manufactureDate}" class="form-control form-control-sm" onchange="updateBatchField(${idx}, 'manufactureDate', this.value)" />
+                        </div>
+                        <div class="flex-fill" style="min-width:120px;">
+                            <label class="text-muted d-block" style="font-size:10px;">Expiry Date</label>
+                            <input type="date" value="${line.expiryDate}" class="form-control form-control-sm" onchange="updateBatchField(${idx}, 'expiryDate', this.value)" />
+                        </div>
+                        <div class="flex-fill" style="min-width:100px;">
+                            <label class="text-muted d-block" style="font-size:10px;">Selling Rate</label>
+                            <input type="number" min="0" step="0.01" value="${line.sellingRate}" class="form-control form-control-sm" onchange="updateBatchField(${idx}, 'sellingRate', this.value)" />
+                        </div>
+                        <div class="flex-fill" style="min-width:140px;">
+                            <label class="text-muted d-block" style="font-size:10px;">Remarks</label>
+                            <input type="text" value="${line.batchRemarks}" class="form-control form-control-sm" onchange="updateBatchField(${idx}, 'batchRemarks', this.value)" />
+                        </div>` : ''}
                     </div>
                 </div>
             </div>`;
@@ -213,11 +248,24 @@ async function saveGrn() {
     if (!vendorId) { alert('Select a vendor first.'); switchTab('cart'); return; }
     if (cart.length === 0) { alert('Add at least one item.'); return; }
 
+    if (batchTrackingEnabled) {
+        const missingBatch = cart.find(l => !l.batchNumber || !l.batchNumber.trim());
+        if (missingBatch) { alert('Batch Tracking is enabled - enter a Batch Number for "' + missingBatch.name + '" before saving.'); return; }
+    }
+
     const payload = {
         vendorId: parseInt(vendorId),
         invoiceNumber: document.getElementById('invoiceNumber').value || null,
         overallDiscount: parseFloat(document.getElementById('overallDiscount').value) || 0,
-        lines: cart.map(l => ({ itemId: l.itemId, quantity: l.quantity, unitPrice: l.unitPrice, discount: l.discount, gstPercent: l.gstPercent }))
+        lines: cart.map(l => ({
+            itemId: l.itemId, quantity: l.quantity, unitPrice: l.unitPrice, discount: l.discount, gstPercent: l.gstPercent,
+            batchNumber: l.batchNumber || null,
+            manufactureDate: l.manufactureDate || null,
+            expiryDate: l.expiryDate || null,
+            supplierBatchNumber: l.supplierBatchNumber || null,
+            sellingRate: l.sellingRate ? parseFloat(l.sellingRate) : null,
+            batchRemarks: l.batchRemarks || null
+        }))
     };
 
     const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;

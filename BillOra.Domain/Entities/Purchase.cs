@@ -33,4 +33,13 @@ public class PurchaseItem
     public decimal Discount { get; set; }
     public decimal GstPercent { get; set; }
     public decimal LineTotal { get; set; }
+
+    // Populated only when the store has Batch Tracking enabled; used to
+    // create the corresponding StockBatch row when the GRN is saved.
+    public string? BatchNumber { get; set; }
+    public DateTime? ManufactureDate { get; set; }
+    public DateTime? ExpiryDate { get; set; }
+    public string? SupplierBatchNumber { get; set; }
+    public decimal? SellingRate { get; set; }
+    public string? BatchRemarks { get; set; }
 }

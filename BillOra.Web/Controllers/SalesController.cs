@@ -131,7 +131,10 @@ public class SalesController : Controller
 
         _db.SaleItems.RemoveRange(sale.SaleItems);
 
-        decimal subTotal = 0, taxTotal = 0;
+        var customer = request.CustomerId.HasValue ? await _db.Customers.FindAsync(request.CustomerId.Value) : null;
+        var isInterState = Utils.GstCalculator.IsInterState(store!.State, customer?.State);
+
+        decimal subTotal = 0, taxableTotal = 0, taxTotal = 0, cgstTotal = 0, sgstTotal = 0, igstTotal = 0;
         var newLines = new List<SaleItem>();
 
         foreach (var line in request.Lines)
@@ -139,12 +142,15 @@ public class SalesController : Controller
             var item = await _db.Items.FindAsync(line.ItemId);
             if (item == null) continue;
 
-            var lineBase = (line.UnitPrice * line.Quantity) - line.Discount;
-            var gstPercent = store!.GstEnabled ? item.GstPercent : 0;
-            var lineTax = lineBase * gstPercent / 100;
+            var gstPercent = store.GstEnabled ? item.GstPercent : 0;
+            var gst = Utils.GstCalculator.Calculate(line.UnitPrice, line.Quantity, line.Discount, gstPercent, item.PriceType, store.GstEnabled, isInterState);
 
-            subTotal += lineBase;
-            taxTotal += lineTax;
+            subTotal += (line.UnitPrice * line.Quantity) - line.Discount;
+            taxableTotal += gst.TaxableValue;
+            taxTotal += gst.TaxAmount;
+            cgstTotal += gst.CgstAmount;
+            sgstTotal += gst.SgstAmount;
+            igstTotal += gst.IgstAmount;
 
             newLines.Add(new SaleItem
             {
@@ -153,8 +159,13 @@ public class SalesController : Controller
                 UnitPrice = line.UnitPrice,
                 Discount = line.Discount,
                 GstPercent = gstPercent,
-                TaxAmount = lineTax,
-                LineTotal = lineBase + lineTax
+                PriceType = item.PriceType,
+                TaxableValue = gst.TaxableValue,
+                TaxAmount = gst.TaxAmount,
+                CgstAmount = gst.CgstAmount,
+                SgstAmount = gst.SgstAmount,
+                IgstAmount = gst.IgstAmount,
+                LineTotal = gst.LineTotal
             });
 
             item.CurrentStock -= line.Quantity;
@@ -179,7 +190,12 @@ public class SalesController : Controller
         sale.Notes = request.Notes;
         sale.SubTotal = subTotal;
         sale.DiscountAmount = request.OverallDiscount;
+        sale.TaxableAmount = taxableTotal;
         sale.TaxAmount = taxTotal;
+        sale.CgstAmount = cgstTotal;
+        sale.SgstAmount = sgstTotal;
+        sale.IgstAmount = igstTotal;
+        sale.IsInterState = isInterState;
         sale.RoundOff = grandTotal - grandTotalRaw;
         sale.GrandTotal = grandTotal;
 

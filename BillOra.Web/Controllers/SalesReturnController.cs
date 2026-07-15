@@ -114,7 +114,11 @@ public class SalesReturnController : Controller
             var qty = Math.Min(line.ReturnQuantity, returnable);
             if (qty <= 0) continue;
 
-            var lineRefund = qty * saleItem.UnitPrice * (1 + saleItem.GstPercent / 100);
+            // Use the sale's own recorded per-unit total (LineTotal / Quantity) rather than
+            // recomputing GST here - correct regardless of whether the item was priced
+            // GST-inclusive or GST-exclusive at the time of sale.
+            var perUnitTotal = saleItem.Quantity > 0 ? saleItem.LineTotal / saleItem.Quantity : 0;
+            var lineRefund = qty * perUnitTotal;
             refundTotal += lineRefund;
 
             salesReturn.Items.Add(new SalesReturnItem

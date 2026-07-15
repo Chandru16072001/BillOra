@@ -5,12 +5,21 @@
     <h3>Customers</h3>
 </div>
 
+@if (TempData["Success"] != null) { <div class="alert alert-success py-2">@TempData["Success"]</div> }
+
 <div class="bo-card mb-4">
     <form asp-action="Create" method="post" class="row g-2">
         <div class="col-md-3"><input name="Name" class="form-control" placeholder="Name" required /></div>
         <div class="col-md-3"><input name="Phone" class="form-control" placeholder="Phone" /></div>
         <div class="col-md-3"><input name="Email" class="form-control" placeholder="Email" /></div>
-        <div class="col-md-3"><button class="btn btn-primary w-100"><i class="fa-solid fa-plus"></i> Add Customer</button></div>
+        <div class="col-md-3"><input name="GstNumber" class="form-control" placeholder="GST Number (optional)" /></div>
+        <div class="col-md-4"><input name="Address" class="form-control" placeholder="Address" /></div>
+        <div class="col-md-2"><input name="District" class="form-control" placeholder="District" /></div>
+        <div class="col-md-2"><input name="Taluk" class="form-control" placeholder="Taluk" /></div>
+        <div class="col-md-2"><input name="State" class="form-control" placeholder="State" /></div>
+        <div class="col-md-2"><input name="PinCode" class="form-control" placeholder="PIN Code" /></div>
+        <div class="col-12"><small class="text-muted">State is used to determine CGST+SGST (same state) vs IGST (different state) on invoices.</small></div>
+        <div class="col-md-3"><button class="btn btn-primary w-100 mt-1"><i class="fa-solid fa-plus"></i> Add Customer</button></div>
     </form>
 </div>
 
@@ -25,16 +34,17 @@
 
 <div class="bo-card">
     <table class="table align-middle">
-        <thead><tr><th>Name</th><th>Phone</th><th>Email</th><th class="text-end">Outstanding</th><th class="text-end">Loyalty Points</th></tr></thead>
+        <thead><tr><th>Name</th><th>Phone</th><th>State</th><th class="text-end">Outstanding</th><th class="text-end">Loyalty Points</th><th class="text-end">Actions</th></tr></thead>
         <tbody>
         @foreach (var c in Model)
         {
             <tr>
                 <td>@c.Name</td>
                 <td>@c.Phone</td>
-                <td>@c.Email</td>
+                <td>@c.State</td>
                 <td class="text-end">₹@c.OutstandingAmount.ToString("N2")</td>
                 <td class="text-end">@c.LoyaltyPoints</td>
+                <td class="text-end"><a class="btn btn-sm btn-outline-secondary" href="/Customers/Edit/@c.Id">Edit</a></td>
             </tr>
         }
         </tbody>

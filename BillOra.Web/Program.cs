@@ -48,6 +48,7 @@ builder.Services.AddScoped<ICurrentTenantService, CurrentTenantService>();
 builder.Services.AddScoped<IActivityLogger, ActivityLogger>();
 builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
 builder.Services.AddScoped<IAccountingService, AccountingService>();
+builder.Services.AddScoped<IBatchStockService, BatchStockService>();
 builder.Services.AddDataProtection();
 
 builder.Services.AddControllersWithViews()

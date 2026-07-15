@@ -198,6 +198,11 @@ namespace BillOra.Persistence.Migrations
                     Email = table.Column<string>(type: "TEXT", nullable: true),
                     GstNumber = table.Column<string>(type: "TEXT", nullable: true),
                     Address = table.Column<string>(type: "TEXT", nullable: true),
+                    District = table.Column<string>(type: "TEXT", nullable: true),
+                    Taluk = table.Column<string>(type: "TEXT", nullable: true),
+                    State = table.Column<string>(type: "TEXT", nullable: true),
+                    Country = table.Column<string>(type: "TEXT", nullable: true),
+                    PinCode = table.Column<string>(type: "TEXT", nullable: true),
                     CreditLimit = table.Column<decimal>(type: "TEXT", precision: 18, scale: 2, nullable: false),
                     OutstandingAmount = table.Column<decimal>(type: "TEXT", precision: 18, scale: 2, nullable: false),
                     LoyaltyPoints = table.Column<int>(type: "INTEGER", nullable: false),
@@ -235,6 +240,42 @@ namespace BillOra.Persistence.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_EmailSettingsEntries", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "InvoiceSettingsEntries",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    InvoiceHeading = table.Column<string>(type: "TEXT", nullable: false),
+                    ShowStoreName = table.Column<bool>(type: "INTEGER", nullable: false),
+                    ShowStoreAddress = table.Column<bool>(type: "INTEGER", nullable: false),
+                    ShowStorePhone = table.Column<bool>(type: "INTEGER", nullable: false),
+                    ShowStoreEmail = table.Column<bool>(type: "INTEGER", nullable: false),
+                    ShowStoreGst = table.Column<bool>(type: "INTEGER", nullable: false),
+                    ShowStoreLogo = table.Column<bool>(type: "INTEGER", nullable: false),
+                    ShowCustomerName = table.Column<bool>(type: "INTEGER", nullable: false),
+                    ShowCustomerPhone = table.Column<bool>(type: "INTEGER", nullable: false),
+                    ShowCustomerAddress = table.Column<bool>(type: "INTEGER", nullable: false),
+                    ShowCustomerGst = table.Column<bool>(type: "INTEGER", nullable: false),
+                    ShowGstDetails = table.Column<bool>(type: "INTEGER", nullable: false),
+                    ShowQrCode = table.Column<bool>(type: "INTEGER", nullable: false),
+                    ShowTermsAndConditions = table.Column<bool>(type: "INTEGER", nullable: false),
+                    TermsAndConditionsText = table.Column<string>(type: "TEXT", nullable: true),
+                    FooterMessage = table.Column<string>(type: "TEXT", nullable: true),
+                    DefaultPrinterType = table.Column<int>(type: "INTEGER", nullable: false),
+                    Copies = table.Column<int>(type: "INTEGER", nullable: false),
+                    PaperSize = table.Column<string>(type: "TEXT", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "TEXT", nullable: true),
+                    IsActive = table.Column<bool>(type: "INTEGER", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "INTEGER", nullable: false),
+                    StoreId = table.Column<int>(type: "INTEGER", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_InvoiceSettingsEntries", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -497,16 +538,28 @@ namespace BillOra.Persistence.Migrations
                         .Annotation("Sqlite:Autoincrement", true),
                     CompanyId = table.Column<int>(type: "INTEGER", nullable: false),
                     Name = table.Column<string>(type: "TEXT", nullable: false),
+                    OwnerName = table.Column<string>(type: "TEXT", nullable: true),
                     GstNumber = table.Column<string>(type: "TEXT", nullable: true),
+                    PanNumber = table.Column<string>(type: "TEXT", nullable: true),
+                    BusinessType = table.Column<string>(type: "TEXT", nullable: true),
+                    FssaiNumber = table.Column<string>(type: "TEXT", nullable: true),
                     Phone = table.Column<string>(type: "TEXT", nullable: true),
+                    AlternatePhone = table.Column<string>(type: "TEXT", nullable: true),
                     Email = table.Column<string>(type: "TEXT", nullable: true),
                     Address = table.Column<string>(type: "TEXT", nullable: true),
+                    District = table.Column<string>(type: "TEXT", nullable: true),
+                    Taluk = table.Column<string>(type: "TEXT", nullable: true),
+                    State = table.Column<string>(type: "TEXT", nullable: true),
+                    Country = table.Column<string>(type: "TEXT", nullable: true),
+                    PinCode = table.Column<string>(type: "TEXT", nullable: true),
                     LogoPath = table.Column<string>(type: "TEXT", nullable: true),
                     InvoicePrefix = table.Column<string>(type: "TEXT", nullable: false),
                     DefaultPrinter = table.Column<string>(type: "TEXT", nullable: true),
                     Currency = table.Column<string>(type: "TEXT", nullable: false),
                     Timezone = table.Column<string>(type: "TEXT", nullable: false),
                     GstEnabled = table.Column<bool>(type: "INTEGER", nullable: false),
+                    StockValidationEnabled = table.Column<bool>(type: "INTEGER", nullable: false),
+                    BatchTrackingEnabled = table.Column<bool>(type: "INTEGER", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "TEXT", nullable: true),
                     IsActive = table.Column<bool>(type: "INTEGER", nullable: false),
@@ -538,6 +591,11 @@ namespace BillOra.Persistence.Migrations
                     TaxAmount = table.Column<decimal>(type: "TEXT", precision: 18, scale: 2, nullable: false),
                     RoundOff = table.Column<decimal>(type: "TEXT", precision: 18, scale: 2, nullable: false),
                     GrandTotal = table.Column<decimal>(type: "TEXT", precision: 18, scale: 2, nullable: false),
+                    TaxableAmount = table.Column<decimal>(type: "TEXT", precision: 18, scale: 2, nullable: false),
+                    CgstAmount = table.Column<decimal>(type: "TEXT", precision: 18, scale: 2, nullable: false),
+                    SgstAmount = table.Column<decimal>(type: "TEXT", precision: 18, scale: 2, nullable: false),
+                    IgstAmount = table.Column<decimal>(type: "TEXT", precision: 18, scale: 2, nullable: false),
+                    IsInterState = table.Column<bool>(type: "INTEGER", nullable: false),
                     PaymentModeId = table.Column<int>(type: "INTEGER", nullable: true),
                     PaymentStatus = table.Column<int>(type: "INTEGER", nullable: false),
                     Notes = table.Column<string>(type: "TEXT", nullable: true),
@@ -612,6 +670,7 @@ namespace BillOra.Persistence.Migrations
                     UnitId = table.Column<int>(type: "INTEGER", nullable: true),
                     HsnCode = table.Column<string>(type: "TEXT", nullable: true),
                     GstPercent = table.Column<decimal>(type: "TEXT", precision: 18, scale: 2, nullable: false),
+                    PriceType = table.Column<int>(type: "INTEGER", nullable: false),
                     PurchasePrice = table.Column<decimal>(type: "TEXT", precision: 18, scale: 2, nullable: false),
                     SellingPrice = table.Column<decimal>(type: "TEXT", precision: 18, scale: 2, nullable: false),
                     MinSellingPrice = table.Column<decimal>(type: "TEXT", precision: 18, scale: 2, nullable: false),
@@ -762,7 +821,13 @@ namespace BillOra.Persistence.Migrations
                     UnitPrice = table.Column<decimal>(type: "TEXT", precision: 18, scale: 2, nullable: false),
                     Discount = table.Column<decimal>(type: "TEXT", precision: 18, scale: 2, nullable: false),
                     GstPercent = table.Column<decimal>(type: "TEXT", precision: 18, scale: 2, nullable: false),
-                    LineTotal = table.Column<decimal>(type: "TEXT", precision: 18, scale: 2, nullable: false)
+                    LineTotal = table.Column<decimal>(type: "TEXT", precision: 18, scale: 2, nullable: false),
+                    BatchNumber = table.Column<string>(type: "TEXT", nullable: true),
+                    ManufactureDate = table.Column<DateTime>(type: "TEXT", nullable: true),
+                    ExpiryDate = table.Column<DateTime>(type: "TEXT", nullable: true),
+                    SupplierBatchNumber = table.Column<string>(type: "TEXT", nullable: true),
+                    SellingRate = table.Column<decimal>(type: "TEXT", precision: 18, scale: 2, nullable: true),
+                    BatchRemarks = table.Column<string>(type: "TEXT", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -793,8 +858,14 @@ namespace BillOra.Persistence.Migrations
                     UnitPrice = table.Column<decimal>(type: "TEXT", precision: 18, scale: 2, nullable: false),
                     Discount = table.Column<decimal>(type: "TEXT", precision: 18, scale: 2, nullable: false),
                     GstPercent = table.Column<decimal>(type: "TEXT", precision: 18, scale: 2, nullable: false),
+                    PriceType = table.Column<int>(type: "INTEGER", nullable: false),
+                    TaxableValue = table.Column<decimal>(type: "TEXT", precision: 18, scale: 2, nullable: false),
                     TaxAmount = table.Column<decimal>(type: "TEXT", precision: 18, scale: 2, nullable: false),
-                    LineTotal = table.Column<decimal>(type: "TEXT", precision: 18, scale: 2, nullable: false)
+                    CgstAmount = table.Column<decimal>(type: "TEXT", precision: 18, scale: 2, nullable: false),
+                    SgstAmount = table.Column<decimal>(type: "TEXT", precision: 18, scale: 2, nullable: false),
+                    IgstAmount = table.Column<decimal>(type: "TEXT", precision: 18, scale: 2, nullable: false),
+                    LineTotal = table.Column<decimal>(type: "TEXT", precision: 18, scale: 2, nullable: false),
+                    BatchInfo = table.Column<string>(type: "TEXT", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -811,6 +882,41 @@ namespace BillOra.Persistence.Migrations
                         principalTable: "Sales",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "StockBatches",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    ItemId = table.Column<int>(type: "INTEGER", nullable: false),
+                    BatchNumber = table.Column<string>(type: "TEXT", nullable: false),
+                    ManufactureDate = table.Column<DateTime>(type: "TEXT", nullable: true),
+                    ExpiryDate = table.Column<DateTime>(type: "TEXT", nullable: true),
+                    SupplierBatchNumber = table.Column<string>(type: "TEXT", nullable: true),
+                    PurchaseRate = table.Column<decimal>(type: "TEXT", precision: 18, scale: 2, nullable: false),
+                    SellingRate = table.Column<decimal>(type: "TEXT", precision: 18, scale: 2, nullable: false),
+                    Quantity = table.Column<decimal>(type: "TEXT", precision: 18, scale: 2, nullable: false),
+                    RemainingQuantity = table.Column<decimal>(type: "TEXT", precision: 18, scale: 2, nullable: false),
+                    Remarks = table.Column<string>(type: "TEXT", nullable: true),
+                    SourceModule = table.Column<string>(type: "TEXT", nullable: true),
+                    SourceId = table.Column<int>(type: "INTEGER", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "TEXT", nullable: true),
+                    IsActive = table.Column<bool>(type: "INTEGER", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "INTEGER", nullable: false),
+                    StoreId = table.Column<int>(type: "INTEGER", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_StockBatches", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_StockBatches_Items_ItemId",
+                        column: x => x.ItemId,
+                        principalTable: "Items",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -1010,6 +1116,16 @@ namespace BillOra.Persistence.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_StockBatches_ItemId",
+                table: "StockBatches",
+                column: "ItemId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_StockBatches_StoreId_ItemId_ExpiryDate",
+                table: "StockBatches",
+                columns: new[] { "StoreId", "ItemId", "ExpiryDate" });
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Stores_CompanyId",
                 table: "Stores",
                 column: "CompanyId");
@@ -1054,6 +1170,9 @@ namespace BillOra.Persistence.Migrations
                 name: "InventoryTransactions");
 
             migrationBuilder.DropTable(
+                name: "InvoiceSettingsEntries");
+
+            migrationBuilder.DropTable(
                 name: "ItemPrices");
 
             migrationBuilder.DropTable(
@@ -1067,6 +1186,9 @@ namespace BillOra.Persistence.Migrations
 
             migrationBuilder.DropTable(
                 name: "StaffModulePermissions");
+
+            migrationBuilder.DropTable(
+                name: "StockBatches");
 
             migrationBuilder.DropTable(
                 name: "Stores");

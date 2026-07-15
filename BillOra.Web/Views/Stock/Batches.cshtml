@@ -1,0 +1,26 @@
+@model List<StockBatch>
+@{
+    ViewData["Title"] = "Batches — " + ((Item)ViewBag.Item).Name;
+    var item = (Item)ViewBag.Item;
+}
+<h3 class="mb-4">Batches — @item.Name</h3>
+<div class="bo-card">
+    <table class="table table-sm">
+        <thead><tr><th>Batch No.</th><th>Mfg Date</th><th>Expiry Date</th><th class="text-end">Received</th><th class="text-end">Remaining</th><th class="text-end">Purchase Rate</th><th class="text-end">Selling Rate</th></tr></thead>
+        <tbody>
+        @foreach (var b in Model)
+        {
+            var expired = b.ExpiryDate.HasValue && b.ExpiryDate.Value < DateTime.UtcNow;
+            <tr class="@(expired ? "table-danger" : "")">
+                <td>@b.BatchNumber</td>
+                <td>@(b.ManufactureDate?.ToString("dd MMM yyyy") ?? "-")</td>
+                <td>@(b.ExpiryDate?.ToString("dd MMM yyyy") ?? "-") @(expired ? "(expired)" : "")</td>
+                <td class="text-end">@b.Quantity</td>
+                <td class="text-end">@b.RemainingQuantity</td>
+                <td class="text-end">₹@b.PurchaseRate.ToString("N2")</td>
+                <td class="text-end">₹@b.SellingRate.ToString("N2")</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>

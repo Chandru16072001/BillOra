@@ -2,39 +2,85 @@
 @{
     Layout = null;
     var store = (Store)ViewBag.Store;
+    var cfg = (InvoiceSettings)ViewBag.InvoiceSettings;
 }
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="utf-8" />
-    <title>Invoice @Model.InvoiceNumber</title>
+    <title>@cfg.InvoiceHeading @Model.InvoiceNumber</title>
     <style>
         body { font-family: Arial, sans-serif; font-size: 14px; color: #222; max-width: 800px; margin: 30px auto; }
-        .header { display: flex; justify-content: space-between; border-bottom: 2px solid #333; padding-bottom: 12px; margin-bottom: 16px; }
+        .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #333; padding-bottom: 12px; margin-bottom: 4px; }
         .store-name { font-size: 22px; font-weight: bold; }
+        .invoice-heading { text-align: center; font-size: 20px; font-weight: 700; letter-spacing: 1px; margin: 4px 0 16px; text-transform: uppercase; }
+        .logo { max-height: 60px; margin-bottom: 6px; }
         table { width: 100%; border-collapse: collapse; margin-top: 12px; }
         th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
         th { background: #f5f6fb; }
         .text-end { text-align: right; }
-        .totals { width: 300px; margin-left: auto; margin-top: 16px; }
+        .totals { width: 320px; margin-left: auto; margin-top: 16px; }
         .totals td { border: none; padding: 4px 8px; }
         .grand-total { font-size: 18px; font-weight: bold; border-top: 2px solid #333; }
+        .gst-box { width: 320px; margin-top: 12px; }
+        .gst-box td { border: 1px solid #ddd; padding: 6px 10px; font-size: 13px; }
+        .footer-row { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 24px; }
         @@media print { .no-print { display: none; } }
     </style>
 </head>
 <body onload="window.print()">
     <div class="header">
         <div>
-            <div class="store-name">@store.Name</div>
-            <div>@store.Address</div>
-            <div>@store.Phone @(string.IsNullOrEmpty(store.GstNumber) ? "" : " | GSTIN: " + store.GstNumber)</div>
+            @if (cfg.ShowStoreLogo && !string.IsNullOrEmpty(store.LogoPath))
+            {
+                <img class="logo" src="@store.LogoPath" /><br />
+            }
+            @if (cfg.ShowStoreName)
+            {
+                <div class="store-name">@store.Name</div>
+            }
+            @if (cfg.ShowStoreAddress)
+            {
+                <div>@store.Address</div>
+            }
+            <div>
+                @if (cfg.ShowStorePhone)
+                {
+                    <text>@store.Phone</text>
+                }
+                @if (cfg.ShowStoreEmail && !string.IsNullOrEmpty(store.Email))
+                {
+                    <text> | @store.Email</text>
+                }
+            </div>
+            @if (cfg.ShowStoreGst && !string.IsNullOrEmpty(store.GstNumber))
+            {
+                <div>GSTIN: @store.GstNumber</div>
+            }
         </div>
         <div class="text-end">
             <div><strong>Invoice:</strong> @Model.InvoiceNumber</div>
             <div><strong>Date:</strong> @Model.SaleDate.ToLocalTime().ToString("dd MMM yyyy hh:mm tt")</div>
-            <div><strong>Customer:</strong> @(Model.Customer?.Name ?? "Walk-in")</div>
+            @if (cfg.ShowCustomerName)
+            {
+                <div><strong>Customer:</strong> @(Model.Customer?.Name ?? "Walk-in")</div>
+            }
+            @if (cfg.ShowCustomerPhone && !string.IsNullOrEmpty(Model.Customer?.Phone))
+            {
+                <div>@Model.Customer.Phone</div>
+            }
+            @if (cfg.ShowCustomerAddress && !string.IsNullOrEmpty(Model.Customer?.Address))
+            {
+                <div>@Model.Customer.Address</div>
+            }
+            @if (cfg.ShowCustomerGst && !string.IsNullOrEmpty(Model.Customer?.GstNumber))
+            {
+                <div>GSTIN: @Model.Customer.GstNumber</div>
+            }
         </div>
     </div>
+
+    <div class="invoice-heading">@cfg.InvoiceHeading</div>
 
     <table>
         <thead>
@@ -57,6 +103,23 @@
         </tbody>
     </table>
 
+    @if (cfg.ShowGstDetails && Model.TaxAmount > 0)
+    {
+        <table class="gst-box">
+            <tr><td>Taxable Amount</td><td class="text-end">₹@Model.TaxableAmount.ToString("N2")</td></tr>
+            @if (Model.IsInterState)
+            {
+                <tr><td>IGST</td><td class="text-end">₹@Model.IgstAmount.ToString("N2")</td></tr>
+            }
+            else
+            {
+                <tr><td>CGST</td><td class="text-end">₹@Model.CgstAmount.ToString("N2")</td></tr>
+                <tr><td>SGST</td><td class="text-end">₹@Model.SgstAmount.ToString("N2")</td></tr>
+            }
+            <tr><td><strong>Total GST</strong></td><td class="text-end"><strong>₹@Model.TaxAmount.ToString("N2")</strong></td></tr>
+        </table>
+    }
+
     <table class="totals">
         <tr><td>Subtotal</td><td class="text-end">₹@Model.SubTotal.ToString("N2")</td></tr>
         <tr><td>Discount</td><td class="text-end">₹@Model.DiscountAmount.ToString("N2")</td></tr>
@@ -64,7 +127,23 @@
         <tr class="grand-total"><td>Grand Total</td><td class="text-end">₹@Model.GrandTotal.ToString("N2")</td></tr>
     </table>
 
-    <p style="margin-top:30px; text-align:center; color:#666;">Thank you for shopping with us!</p>
+    <div class="footer-row">
+        <div>
+            @if (cfg.ShowTermsAndConditions && !string.IsNullOrEmpty(cfg.TermsAndConditionsText))
+            {
+                <p style="font-size:12px; max-width:400px;"><strong>Terms &amp; Conditions:</strong><br />@cfg.TermsAndConditionsText</p>
+            }
+        </div>
+        @if (cfg.ShowQrCode)
+        {
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=110x110&data=@Uri.EscapeDataString($"Invoice {Model.InvoiceNumber} | {store.Name} | Total Rs.{Model.GrandTotal:N2}")" />
+        }
+    </div>
+
+    @if (!string.IsNullOrEmpty(cfg.FooterMessage))
+    {
+        <p style="margin-top:20px; text-align:center; color:#666;">@cfg.FooterMessage</p>
+    }
     <div class="no-print" style="text-align:center; margin-top:10px;">
         <a href="/POS">Back to POS</a>
     </div>

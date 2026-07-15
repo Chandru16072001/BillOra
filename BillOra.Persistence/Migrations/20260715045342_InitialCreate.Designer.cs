@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BillOra.Persistence.Migrations
 {
     [DbContext(typeof(BillOraDbContext))]
-    [Migration("20260709051504_InitialCreate")]
+    [Migration("20260715045342_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -293,11 +293,17 @@ namespace BillOra.Persistence.Migrations
                     b.Property<string>("Address")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("Country")
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT");
 
                     b.Property<decimal>("CreditLimit")
                         .HasPrecision(18, 2)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("District")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Email")
@@ -326,8 +332,17 @@ namespace BillOra.Persistence.Migrations
                     b.Property<string>("Phone")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("PinCode")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("State")
+                        .HasColumnType("TEXT");
+
                     b.Property<int>("StoreId")
                         .HasColumnType("INTEGER");
+
+                    b.Property<string>("Taluk")
+                        .HasColumnType("TEXT");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("TEXT");
@@ -438,6 +453,90 @@ namespace BillOra.Persistence.Migrations
                     b.ToTable("InventoryTransactions");
                 });
 
+            modelBuilder.Entity("BillOra.Domain.Entities.InvoiceSettings", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Copies")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("DefaultPrinterType")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("FooterMessage")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("InvoiceHeading")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("PaperSize")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("ShowCustomerAddress")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("ShowCustomerGst")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("ShowCustomerName")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("ShowCustomerPhone")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("ShowGstDetails")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("ShowQrCode")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("ShowStoreAddress")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("ShowStoreEmail")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("ShowStoreGst")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("ShowStoreLogo")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("ShowStoreName")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("ShowStorePhone")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("ShowTermsAndConditions")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("StoreId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("TermsAndConditionsText")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("InvoiceSettingsEntries");
+                });
+
             modelBuilder.Entity("BillOra.Domain.Entities.Item", b =>
                 {
                     b.Property<int>("Id")
@@ -490,6 +589,9 @@ namespace BillOra.Persistence.Migrations
                     b.Property<decimal>("OpeningStock")
                         .HasPrecision(18, 2)
                         .HasColumnType("TEXT");
+
+                    b.Property<int>("PriceType")
+                        .HasColumnType("INTEGER");
 
                     b.Property<decimal>("PurchasePrice")
                         .HasPrecision(18, 2)
@@ -718,8 +820,17 @@ namespace BillOra.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("BatchNumber")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("BatchRemarks")
+                        .HasColumnType("TEXT");
+
                     b.Property<decimal>("Discount")
                         .HasPrecision(18, 2)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("ExpiryDate")
                         .HasColumnType("TEXT");
 
                     b.Property<decimal>("GstPercent")
@@ -733,11 +844,21 @@ namespace BillOra.Persistence.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("TEXT");
 
+                    b.Property<DateTime?>("ManufactureDate")
+                        .HasColumnType("TEXT");
+
                     b.Property<int>("PurchaseId")
                         .HasColumnType("INTEGER");
 
                     b.Property<decimal>("Quantity")
                         .HasPrecision(18, 2)
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal?>("SellingRate")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("SupplierBatchNumber")
                         .HasColumnType("TEXT");
 
                     b.Property<decimal>("UnitPrice")
@@ -763,6 +884,10 @@ namespace BillOra.Persistence.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<decimal>("CgstAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT");
 
@@ -777,6 +902,10 @@ namespace BillOra.Persistence.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("TEXT");
 
+                    b.Property<decimal>("IgstAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("InvoiceNumber")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -788,6 +917,9 @@ namespace BillOra.Persistence.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<bool>("IsHeld")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsInterState")
                         .HasColumnType("INTEGER");
 
                     b.Property<bool>("IsReturned")
@@ -809,6 +941,10 @@ namespace BillOra.Persistence.Migrations
                     b.Property<DateTime>("SaleDate")
                         .HasColumnType("TEXT");
 
+                    b.Property<decimal>("SgstAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("TEXT");
+
                     b.Property<int>("StoreId")
                         .HasColumnType("INTEGER");
 
@@ -817,6 +953,10 @@ namespace BillOra.Persistence.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<decimal>("TaxAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("TaxableAmount")
                         .HasPrecision(18, 2)
                         .HasColumnType("TEXT");
 
@@ -841,11 +981,22 @@ namespace BillOra.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("BatchInfo")
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("CgstAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("TEXT");
+
                     b.Property<decimal>("Discount")
                         .HasPrecision(18, 2)
                         .HasColumnType("TEXT");
 
                     b.Property<decimal>("GstPercent")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("IgstAmount")
                         .HasPrecision(18, 2)
                         .HasColumnType("TEXT");
 
@@ -856,6 +1007,9 @@ namespace BillOra.Persistence.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("TEXT");
 
+                    b.Property<int>("PriceType")
+                        .HasColumnType("INTEGER");
+
                     b.Property<decimal>("Quantity")
                         .HasPrecision(18, 2)
                         .HasColumnType("TEXT");
@@ -863,7 +1017,15 @@ namespace BillOra.Persistence.Migrations
                     b.Property<int>("SaleId")
                         .HasColumnType("INTEGER");
 
+                    b.Property<decimal>("SgstAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("TEXT");
+
                     b.Property<decimal>("TaxAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("TaxableValue")
                         .HasPrecision(18, 2)
                         .HasColumnType("TEXT");
 
@@ -1014,6 +1176,77 @@ namespace BillOra.Persistence.Migrations
                     b.ToTable("StaffModulePermissions");
                 });
 
+            modelBuilder.Entity("BillOra.Domain.Entities.StockBatch", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("BatchNumber")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("ExpiryDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("ItemId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("ManufactureDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("PurchaseRate")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("Quantity")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("RemainingQuantity")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Remarks")
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("SellingRate")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("SourceId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("SourceModule")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("StoreId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("SupplierBatchNumber")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ItemId");
+
+                    b.HasIndex("StoreId", "ItemId", "ExpiryDate");
+
+                    b.ToTable("StockBatches");
+                });
+
             modelBuilder.Entity("BillOra.Domain.Entities.Store", b =>
                 {
                     b.Property<int>("Id")
@@ -1023,8 +1256,20 @@ namespace BillOra.Persistence.Migrations
                     b.Property<string>("Address")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("AlternatePhone")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("BatchTrackingEnabled")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("BusinessType")
+                        .HasColumnType("TEXT");
+
                     b.Property<int>("CompanyId")
                         .HasColumnType("INTEGER");
+
+                    b.Property<string>("Country")
+                        .HasColumnType("TEXT");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT");
@@ -1036,7 +1281,13 @@ namespace BillOra.Persistence.Migrations
                     b.Property<string>("DefaultPrinter")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("District")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Email")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("FssaiNumber")
                         .HasColumnType("TEXT");
 
                     b.Property<bool>("GstEnabled")
@@ -1062,7 +1313,25 @@ namespace BillOra.Persistence.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("OwnerName")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PanNumber")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Phone")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PinCode")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("State")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("StockValidationEnabled")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Taluk")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Timezone")
@@ -1591,6 +1860,17 @@ namespace BillOra.Persistence.Migrations
                     b.Navigation("SaleItem");
 
                     b.Navigation("SalesReturn");
+                });
+
+            modelBuilder.Entity("BillOra.Domain.Entities.StockBatch", b =>
+                {
+                    b.HasOne("BillOra.Domain.Entities.Item", "Item")
+                        .WithMany()
+                        .HasForeignKey("ItemId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Item");
                 });
 
             modelBuilder.Entity("BillOra.Domain.Entities.Store", b =>
