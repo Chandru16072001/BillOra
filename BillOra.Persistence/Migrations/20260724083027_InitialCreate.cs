@@ -218,6 +218,28 @@ namespace BillOra.Persistence.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "DiningTables",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    TableNumber = table.Column<string>(type: "TEXT", nullable: false),
+                    Capacity = table.Column<int>(type: "INTEGER", nullable: false),
+                    Section = table.Column<string>(type: "TEXT", nullable: true),
+                    Status = table.Column<int>(type: "INTEGER", nullable: false),
+                    CurrentOrderId = table.Column<int>(type: "INTEGER", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "TEXT", nullable: true),
+                    IsActive = table.Column<bool>(type: "INTEGER", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "INTEGER", nullable: false),
+                    StoreId = table.Column<int>(type: "INTEGER", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_DiningTables", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "EmailSettingsEntries",
                 columns: table => new
                 {
@@ -400,6 +422,25 @@ namespace BillOra.Persistence.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Waiters",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    Name = table.Column<string>(type: "TEXT", nullable: false),
+                    Phone = table.Column<string>(type: "TEXT", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "TEXT", nullable: true),
+                    IsActive = table.Column<bool>(type: "INTEGER", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "INTEGER", nullable: false),
+                    StoreId = table.Column<int>(type: "INTEGER", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Waiters", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "AspNetRoleClaims",
                 columns: table => new
                 {
@@ -577,6 +618,36 @@ namespace BillOra.Persistence.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "TableReservations",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    TableId = table.Column<int>(type: "INTEGER", nullable: false),
+                    CustomerName = table.Column<string>(type: "TEXT", nullable: false),
+                    CustomerPhone = table.Column<string>(type: "TEXT", nullable: true),
+                    PartySize = table.Column<int>(type: "INTEGER", nullable: false),
+                    ReservationDateTime = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    Status = table.Column<int>(type: "INTEGER", nullable: false),
+                    Notes = table.Column<string>(type: "TEXT", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "TEXT", nullable: true),
+                    IsActive = table.Column<bool>(type: "INTEGER", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "INTEGER", nullable: false),
+                    StoreId = table.Column<int>(type: "INTEGER", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_TableReservations", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_TableReservations_DiningTables_TableId",
+                        column: x => x.TableId,
+                        principalTable: "DiningTables",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Sales",
                 columns: table => new
                 {
@@ -601,6 +672,10 @@ namespace BillOra.Persistence.Migrations
                     Notes = table.Column<string>(type: "TEXT", nullable: true),
                     IsHeld = table.Column<bool>(type: "INTEGER", nullable: false),
                     IsReturned = table.Column<bool>(type: "INTEGER", nullable: false),
+                    TableNumber = table.Column<string>(type: "TEXT", nullable: true),
+                    WaiterName = table.Column<string>(type: "TEXT", nullable: true),
+                    OrderNumber = table.Column<string>(type: "TEXT", nullable: true),
+                    OrderType = table.Column<string>(type: "TEXT", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "TEXT", nullable: true),
                     IsActive = table.Column<bool>(type: "INTEGER", nullable: false),
@@ -653,6 +728,50 @@ namespace BillOra.Persistence.Migrations
                         principalTable: "Vendors",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "RestaurantOrders",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    OrderNumber = table.Column<string>(type: "TEXT", nullable: false),
+                    OrderType = table.Column<int>(type: "INTEGER", nullable: false),
+                    Status = table.Column<int>(type: "INTEGER", nullable: false),
+                    TableId = table.Column<int>(type: "INTEGER", nullable: true),
+                    WaiterId = table.Column<int>(type: "INTEGER", nullable: true),
+                    CustomerId = table.Column<int>(type: "INTEGER", nullable: true),
+                    SaleId = table.Column<int>(type: "INTEGER", nullable: true),
+                    Notes = table.Column<string>(type: "TEXT", nullable: true),
+                    LastKotBatch = table.Column<int>(type: "INTEGER", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "TEXT", nullable: true),
+                    IsActive = table.Column<bool>(type: "INTEGER", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "INTEGER", nullable: false),
+                    StoreId = table.Column<int>(type: "INTEGER", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_RestaurantOrders", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_RestaurantOrders_Customers_CustomerId",
+                        column: x => x.CustomerId,
+                        principalTable: "Customers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_RestaurantOrders_DiningTables_TableId",
+                        column: x => x.TableId,
+                        principalTable: "DiningTables",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_RestaurantOrders_Waiters_WaiterId",
+                        column: x => x.WaiterId,
+                        principalTable: "Waiters",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -847,6 +966,38 @@ namespace BillOra.Persistence.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "RestaurantOrderItems",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    OrderId = table.Column<int>(type: "INTEGER", nullable: false),
+                    ItemId = table.Column<int>(type: "INTEGER", nullable: false),
+                    Quantity = table.Column<decimal>(type: "TEXT", precision: 18, scale: 2, nullable: false),
+                    UnitPrice = table.Column<decimal>(type: "TEXT", precision: 18, scale: 2, nullable: false),
+                    Notes = table.Column<string>(type: "TEXT", nullable: true),
+                    KotBatch = table.Column<int>(type: "INTEGER", nullable: false),
+                    KotSentAt = table.Column<DateTime>(type: "TEXT", nullable: true),
+                    SplitGroup = table.Column<int>(type: "INTEGER", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_RestaurantOrderItems", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_RestaurantOrderItems_Items_ItemId",
+                        column: x => x.ItemId,
+                        principalTable: "Items",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_RestaurantOrderItems_RestaurantOrders_OrderId",
+                        column: x => x.OrderId,
+                        principalTable: "RestaurantOrders",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "SaleItems",
                 columns: table => new
                 {
@@ -1004,6 +1155,12 @@ namespace BillOra.Persistence.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_DiningTables_StoreId_TableNumber",
+                table: "DiningTables",
+                columns: new[] { "StoreId", "TableNumber" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_InventoryTransactions_ItemId",
                 table: "InventoryTransactions",
                 column: "ItemId");
@@ -1057,6 +1214,37 @@ namespace BillOra.Persistence.Migrations
                 name: "IX_Purchases_VendorId",
                 table: "Purchases",
                 column: "VendorId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_RestaurantOrderItems_ItemId",
+                table: "RestaurantOrderItems",
+                column: "ItemId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_RestaurantOrderItems_OrderId",
+                table: "RestaurantOrderItems",
+                column: "OrderId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_RestaurantOrders_CustomerId",
+                table: "RestaurantOrders",
+                column: "CustomerId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_RestaurantOrders_StoreId_OrderNumber",
+                table: "RestaurantOrders",
+                columns: new[] { "StoreId", "OrderNumber" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_RestaurantOrders_TableId",
+                table: "RestaurantOrders",
+                column: "TableId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_RestaurantOrders_WaiterId",
+                table: "RestaurantOrders",
+                column: "WaiterId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_SaleItems_ItemId",
@@ -1134,6 +1322,11 @@ namespace BillOra.Persistence.Migrations
                 name: "IX_SubCategories_CategoryId",
                 table: "SubCategories",
                 column: "CategoryId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_TableReservations_TableId",
+                table: "TableReservations",
+                column: "TableId");
         }
 
         /// <inheritdoc />
@@ -1182,6 +1375,9 @@ namespace BillOra.Persistence.Migrations
                 name: "PurchaseItems");
 
             migrationBuilder.DropTable(
+                name: "RestaurantOrderItems");
+
+            migrationBuilder.DropTable(
                 name: "SalesReturnItems");
 
             migrationBuilder.DropTable(
@@ -1192,6 +1388,9 @@ namespace BillOra.Persistence.Migrations
 
             migrationBuilder.DropTable(
                 name: "Stores");
+
+            migrationBuilder.DropTable(
+                name: "TableReservations");
 
             migrationBuilder.DropTable(
                 name: "Taxes");
@@ -1206,6 +1405,9 @@ namespace BillOra.Persistence.Migrations
                 name: "Purchases");
 
             migrationBuilder.DropTable(
+                name: "RestaurantOrders");
+
+            migrationBuilder.DropTable(
                 name: "SaleItems");
 
             migrationBuilder.DropTable(
@@ -1216,6 +1418,12 @@ namespace BillOra.Persistence.Migrations
 
             migrationBuilder.DropTable(
                 name: "Vendors");
+
+            migrationBuilder.DropTable(
+                name: "DiningTables");
+
+            migrationBuilder.DropTable(
+                name: "Waiters");
 
             migrationBuilder.DropTable(
                 name: "Items");

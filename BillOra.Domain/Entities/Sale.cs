@@ -33,6 +33,11 @@ public class Sale : TenantEntity
     public bool IsHeld { get; set; }       // "hold bill" support
     public bool IsReturned { get; set; }
 
+ public string? TableNumber { get; set; }
+    public string? WaiterName { get; set; }
+    public string? OrderNumber { get; set; }
+    public string? OrderType { get; set; } // "Dine-in" / "Takeaway" / "Delivery"
+
     public ICollection<SaleItem> SaleItems { get; set; } = new List<SaleItem>();
 }
 

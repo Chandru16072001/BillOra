@@ -1,0 +1,212 @@
+@using BillOra.Domain.Enums
+@model RestaurantOrder
+@{
+    ViewData["Title"] = "Order " + Model.OrderNumber;
+    var items = (IEnumerable<Item>)ViewBag.Items;
+    var paymentModes = (IEnumerable<PaymentMode>)ViewBag.PaymentModes;
+    bool isClosed = Model.Status == RestaurantOrderStatus.Billed || Model.Status == RestaurantOrderStatus.Cancelled;
+}
+@Html.AntiForgeryToken()
+
+@if (TempData["Success"] != null) { <div class="alert alert-success py-2">@TempData["Success"]</div> }
+@if (TempData["Error"] != null) { <div class="alert alert-danger py-2">@TempData["Error"]</div> }
+
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <div>
+        <h3 class="mb-0">Order @Model.OrderNumber</h3>
+        <div class="text-muted small">
+            @Model.OrderType
+            @if (Model.Table != null) { <text> — Table @Model.Table.TableNumber</text> }
+            @if (Model.Waiter != null) { <text> — Waiter: @Model.Waiter.Name</text> }
+            — <span class="badge bg-secondary">@Model.Status</span>
+        </div>
+    </div>
+    @if (!isClosed)
+    {
+        <form asp-action="Cancel" asp-route-id="@Model.Id" method="post" onsubmit="return confirm('Cancel this order?');">
+            <button class="btn btn-outline-danger btn-sm">Cancel Order</button>
+        </form>
+    }
+</div>
+
+@if (Model.Status == RestaurantOrderStatus.Billed && Model.SaleId.HasValue)
+{
+    <div class="bo-card mb-3">
+        This order was billed. <a href="/Sales/Details/@Model.SaleId">View Invoice</a>
+    </div>
+}
+
+@if (!isClosed)
+{
+    <div class="bo-card mb-3">
+        <h5 class="mb-2">Order Items</h5>
+        <table class="table table-sm">
+            <thead><tr><th>Item</th><th class="text-end">Qty</th><th>Notes</th><th>KOT</th></tr></thead>
+            <tbody>
+            @foreach (var oi in Model.Items)
+            {
+                <tr>
+                    <td>@oi.Item?.Name</td>
+                    <td class="text-end">@oi.Quantity</td>
+                    <td class="text-muted small">@oi.Notes</td>
+                    <td>
+                        @if (oi.KotBatch == 0)
+                        {
+                            <span class="badge bg-warning text-dark">Not sent</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-success">Batch @oi.KotBatch</span>
+                        }
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+
+        <div class="d-flex gap-2 flex-wrap">
+            <form asp-action="SendToKitchen" asp-route-id="@Model.Id" method="post">
+                <button class="btn btn-primary btn-sm"><i class="fa-solid fa-kitchen-set"></i> Send to Kitchen</button>
+            </form>
+            @foreach (var batch in Model.Items.Where(i => i.KotBatch > 0).Select(i => i.KotBatch).Distinct().OrderBy(b => b))
+            {
+                <a class="btn btn-outline-secondary btn-sm" href="/Orders/PrintKot/@Model.Id?batch=@batch" target="_blank"><i class="fa-solid fa-print"></i> Print KOT #@batch</a>
+            }
+            @if (Model.Status == RestaurantOrderStatus.KotSent)
+            {
+                <form asp-action="MarkServed" asp-route-id="@Model.Id" method="post">
+                    <button class="btn btn-outline-success btn-sm"><i class="fa-solid fa-check"></i> Mark Served</button>
+                </form>
+            }
+        </div>
+    </div>
+
+    <div class="bo-card mb-3">
+        <h5 class="mb-2">Add More Items</h5>
+        <input id="itemSearch" class="form-control mb-2" placeholder="Search menu items to add..." />
+        <div id="itemGrid" class="row g-2 mb-2"></div>
+        <div id="addCartLines"></div>
+        <button class="btn btn-sm btn-outline-primary mt-2" id="addItemsBtn" style="display:none;" onclick="submitAddItems()">Add to Order</button>
+    </div>
+
+    <div class="bo-card">
+        <h5 class="mb-2">Generate Bill</h5>
+        <p class="text-muted small">Assign a split number to each item if this bill needs to be split between guests — items sharing the same number go on the same invoice. Leave everything as "1" for a single bill.</p>
+        <table class="table table-sm">
+            <thead><tr><th>Item</th><th class="text-end">Qty</th><th class="text-end">Amount</th><th style="width:90px;">Split #</th></tr></thead>
+            <tbody>
+            @foreach (var oi in Model.Items)
+            {
+                <tr>
+                    <td>@oi.Item?.Name</td>
+                    <td class="text-end">@oi.Quantity</td>
+                    <td class="text-end">₹@((oi.UnitPrice * oi.Quantity).ToString("N2"))</td>
+                    <td><input type="number" min="1" value="1" class="form-control form-control-sm split-input" data-order-item-id="@oi.Id" /></td>
+                </tr>
+            }
+            </tbody>
+        </table>
+        <div class="row g-2 mb-2">
+            <div class="col-md-4">
+                <label class="form-label small">Overall Discount (₹)</label>
+                <input id="overallDiscount" type="number" min="0" value="0" class="form-control form-control-sm" />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label small">Payment Mode</label>
+                <select id="paymentMode" class="form-select form-select-sm">
+                    @foreach (var p in paymentModes)
+                    {
+                        <option value="@p.Id">@p.Name</option>
+                    }
+                </select>
+            </div>
+        </div>
+        <button class="btn btn-primary" onclick="generateBill()"><i class="fa-solid fa-receipt"></i> Generate Bill</button>
+    </div>
+}
+
+@section Scripts {
+<script>
+let addCart = [];
+
+document.getElementById('itemSearch')?.addEventListener('input', async function () {
+    const term = this.value;
+    if (!term) { document.getElementById('itemGrid').innerHTML = ''; return; }
+    const res = await fetch('/Orders/SearchItems?term=' + encodeURIComponent(term));
+    const results = await res.json();
+    const grid = document.getElementById('itemGrid');
+    grid.innerHTML = '';
+    results.forEach(i => {
+        grid.innerHTML += `
+            <div class="col-6 col-md-4 col-lg-3">
+                <div class="pos-item-card" onclick="addToOrderCart(${i.id}, '${i.name.replace("'", "\\'")}')">
+                    <div class="fw-semibold">${i.name}</div>
+                    <div class="text-primary fw-bold">₹${i.sellingPrice.toFixed(2)}</div>
+                </div>
+            </div>`;
+    });
+});
+
+function addToOrderCart(id, name) {
+    const existing = addCart.find(l => l.itemId === id);
+    if (existing) existing.quantity += 1;
+    else addCart.push({ itemId: id, name: name, quantity: 1, notes: '' });
+    renderAddCart();
+}
+
+function renderAddCart() {
+    const container = document.getElementById('addCartLines');
+    document.getElementById('addItemsBtn').style.display = addCart.length > 0 ? 'inline-block' : 'none';
+    container.innerHTML = addCart.map((l, idx) => `
+        <div class="d-flex justify-content-between align-items-center border-bottom py-1">
+            <span>${l.name} x ${l.quantity}</span>
+            <button class="btn btn-sm btn-link text-danger" onclick="addCart.splice(${idx},1); renderAddCart();"><i class="fa-solid fa-xmark"></i></button>
+        </div>`).join('');
+}
+
+async function submitAddItems() {
+    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+    const res = await fetch('/Orders/AddItems/@Model.Id', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token || '' },
+        body: JSON.stringify(addCart.map(l => ({ itemId: l.itemId, quantity: l.quantity, notes: l.notes })))
+    });
+    if (res.ok) { window.location.reload(); }
+    else { alert('Could not add items.'); }
+}
+
+async function generateBill() {
+    const lines = Array.from(document.querySelectorAll('.split-input')).map(input => ({
+        orderItemId: parseInt(input.dataset.orderItemId),
+        splitGroup: parseInt(input.value) || 1
+    }));
+
+    const payload = {
+        paymentModeId: document.getElementById('paymentMode').value || null,
+        overallDiscount: parseFloat(document.getElementById('overallDiscount').value) || 0,
+        lines: lines
+    };
+
+    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+    const res = await fetch('/Orders/GenerateBill/@Model.Id', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token || '' },
+        body: JSON.stringify(payload)
+    });
+
+    if (res.ok) {
+        const result = await res.json();
+        if (result.saleIds.length === 1) {
+            window.location.href = '/POS/Print/' + result.saleIds[0];
+        } else {
+            // Split bill - open each invoice in a new tab, then return to the order.
+            result.saleIds.forEach(id => window.open('/POS/Print/' + id, '_blank'));
+            alert(result.saleIds.length + ' separate bills generated (₹' + result.grandTotal.toFixed(2) + ' total).');
+            window.location.href = '/Orders';
+        }
+    } else {
+        alert('Could not generate the bill. ' + (await res.text()));
+    }
+}
+</script>
+}

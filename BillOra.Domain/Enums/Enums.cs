@@ -50,3 +50,39 @@ public enum GstPriceType
     Exclusive, // GST added on top of the entered price
     Inclusive  // entered price already includes GST; GST is extracted from it
 }
+
+// ---------- Restaurant module (only active when Store.BusinessType == "Restaurant") ----------
+
+public enum TableStatus
+{
+    Available,
+    Occupied,
+    Reserved,
+    Cleaning
+}
+
+public enum ReservationStatus
+{
+    Booked,
+    Confirmed,
+    Seated,
+    Cancelled,
+    NoShow,
+    Completed
+}
+
+public enum RestaurantOrderType
+{
+    DineIn,
+    Takeaway,
+    Delivery
+}
+
+public enum RestaurantOrderStatus
+{
+    Open,        // being built, nothing sent to kitchen yet
+    KotSent,     // at least one round sent to the kitchen
+    Served,      // kitchen has served everything
+    Billed,      // converted to a Sale
+    Cancelled
+}

@@ -77,6 +77,23 @@
             {
                 <div>GSTIN: @Model.Customer.GstNumber</div>
             }
+
+  @if (!string.IsNullOrEmpty(Model.OrderNumber))
+            {
+                <div><strong>Order:</strong> @Model.OrderNumber (@Model.OrderType)</div>
+            }
+            @if (!string.IsNullOrEmpty(Model.TableNumber))
+            {
+                <div><strong>Table:</strong> @Model.TableNumber</div>
+            }
+            @if (!string.IsNullOrEmpty(Model.WaiterName))
+            {
+                <div><strong>Waiter:</strong> @Model.WaiterName</div>
+            }
+            @if (!string.IsNullOrEmpty(store.FssaiNumber))
+            {
+                <div><strong>FSSAI:</strong> @store.FssaiNumber</div>
+            }
         </div>
     </div>
 

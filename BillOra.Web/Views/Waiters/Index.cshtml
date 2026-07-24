@@ -1,0 +1,36 @@
+@model List<Waiter>
+@{ ViewData["Title"] = "Waiters"; }
+
+<h3 class="mb-4">Waiters / Servers</h3>
+
+<div class="bo-card mb-4">
+    <form asp-action="Create" method="post" class="row g-2">
+        <div class="col-md-4"><input name="name" class="form-control" placeholder="Waiter Name" required /></div>
+        <div class="col-md-4"><input name="phone" class="form-control" placeholder="Phone (optional)" /></div>
+        <div class="col-md-4"><button class="btn btn-primary w-100"><i class="fa-solid fa-plus"></i> Add Waiter</button></div>
+    </form>
+</div>
+
+<div class="bo-card">
+    <table class="table align-middle">
+        <thead><tr><th>Name</th><th>Phone</th><th>Status</th><th class="text-end">Actions</th></tr></thead>
+        <tbody>
+        @foreach (var w in Model)
+        {
+            <tr>
+                <td>@w.Name</td>
+                <td>@w.Phone</td>
+                <td>
+                    @if (w.IsActive) { <span class="badge bg-success">Active</span> }
+                    else { <span class="badge bg-secondary">Inactive</span> }
+                </td>
+                <td class="text-end">
+                    <form asp-action="ToggleActive" asp-route-id="@w.Id" method="post" class="d-inline">
+                        <button class="btn btn-sm btn-outline-secondary">Toggle</button>
+                    </form>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>

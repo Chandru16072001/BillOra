@@ -50,6 +50,12 @@ public class BillOraDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<InvoiceSettings> InvoiceSettingsEntries => Set<InvoiceSettings>();
     public DbSet<StaffModulePermission> StaffModulePermissions => Set<StaffModulePermission>();
 
+ public DbSet<DiningTable> DiningTables => Set<DiningTable>();
+    public DbSet<TableReservation> TableReservations => Set<TableReservation>();
+    public DbSet<Waiter> Waiters => Set<Waiter>();
+    public DbSet<RestaurantOrder> RestaurantOrders => Set<RestaurantOrder>();
+    public DbSet<RestaurantOrderItem> RestaurantOrderItems => Set<RestaurantOrderItem>();
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
@@ -87,6 +93,11 @@ public class BillOraDbContext : IdentityDbContext<ApplicationUser>
         builder.Entity<EmailSettings>().HasQueryFilter(e => !e.IsDeleted && (_tenant == null || _tenant.IsDeveloper || e.StoreId == _tenant.StoreId));
         builder.Entity<InvoiceSettings>().HasQueryFilter(e => !e.IsDeleted && (_tenant == null || _tenant.IsDeveloper || e.StoreId == _tenant.StoreId));
         builder.Entity<StaffModulePermission>().HasQueryFilter(e => !e.IsDeleted && (_tenant == null || _tenant.IsDeveloper || e.StoreId == _tenant.StoreId));
+
+       builder.Entity<DiningTable>().HasQueryFilter(e => !e.IsDeleted && (_tenant == null || _tenant.IsDeveloper || e.StoreId == _tenant.StoreId));
+        builder.Entity<TableReservation>().HasQueryFilter(e => !e.IsDeleted && (_tenant == null || _tenant.IsDeveloper || e.StoreId == _tenant.StoreId));
+        builder.Entity<Waiter>().HasQueryFilter(e => !e.IsDeleted && (_tenant == null || _tenant.IsDeveloper || e.StoreId == _tenant.StoreId));
+        builder.Entity<RestaurantOrder>().HasQueryFilter(e => !e.IsDeleted && (_tenant == null || _tenant.IsDeveloper || e.StoreId == _tenant.StoreId));
 
         // ---- Relationships that would otherwise cascade-delete across tenants ----
         builder.Entity<Sale>()
@@ -142,6 +153,8 @@ public class BillOraDbContext : IdentityDbContext<ApplicationUser>
             .WithMany(c => c.Stores)
             .HasForeignKey(s => s.CompanyId)
             .OnDelete(DeleteBehavior.Cascade);
+
+ builder.Entity<Store>().Ignore(s => s.IsRestaurant);
 
         builder.Entity<SaleItem>()
             .HasOne(si => si.Sale)
@@ -199,5 +212,46 @@ public class BillOraDbContext : IdentityDbContext<ApplicationUser>
         builder.Entity<StaffModulePermission>().HasIndex(p => new { p.ApplicationUserId, p.ModuleKey }).IsUnique();
         builder.Entity<AccountTransaction>().HasIndex(t => new { t.StoreId, t.TransactionDate });
         builder.Entity<StockBatch>().HasIndex(b => new { b.StoreId, b.ItemId, b.ExpiryDate });
+
+
+  // ---- Restaurant module relationships ----
+        builder.Entity<TableReservation>()
+            .HasOne(r => r.Table)
+            .WithMany()
+            .HasForeignKey(r => r.TableId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Entity<RestaurantOrder>()
+            .HasOne(o => o.Table)
+            .WithMany()
+            .HasForeignKey(o => o.TableId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Entity<RestaurantOrder>()
+            .HasOne(o => o.Waiter)
+            .WithMany()
+            .HasForeignKey(o => o.WaiterId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Entity<RestaurantOrder>()
+            .HasOne(o => o.Customer)
+            .WithMany()
+            .HasForeignKey(o => o.CustomerId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Entity<RestaurantOrderItem>()
+            .HasOne(oi => oi.Order)
+            .WithMany(o => o.Items)
+            .HasForeignKey(oi => oi.OrderId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Entity<RestaurantOrderItem>()
+            .HasOne(oi => oi.Item)
+            .WithMany()
+            .HasForeignKey(oi => oi.ItemId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Entity<DiningTable>().HasIndex(t => new { t.StoreId, t.TableNumber }).IsUnique();
+        builder.Entity<RestaurantOrder>().HasIndex(o => new { o.StoreId, o.OrderNumber }).IsUnique();
     }
 }

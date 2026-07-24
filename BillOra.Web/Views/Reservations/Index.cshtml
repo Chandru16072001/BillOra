@@ -1,0 +1,84 @@
+@using BillOra.Domain.Enums
+@model List<TableReservation>
+@{
+    ViewData["Title"] = "Reservations";
+    var tables = (List<DiningTable>)ViewBag.Tables;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h3 class="mb-0">Table Reservations</h3>
+    <a class="btn btn-outline-secondary btn-sm" href="/Tables"><i class="fa-solid fa-chair"></i> Tables</a>
+</div>
+
+@if (TempData["Success"] != null) { <div class="alert alert-success py-2">@TempData["Success"]</div> }
+@if (TempData["Error"] != null) { <div class="alert alert-danger py-2">@TempData["Error"]</div> }
+
+<div class="bo-card mb-4">
+    <h5 class="mb-3">New Reservation / Booking</h5>
+    <form asp-action="Create" method="post" class="row g-2">
+        <div class="col-md-2">
+            <label class="form-label small">Table</label>
+            <select name="tableId" class="form-select" required>
+                @foreach (var t in tables)
+                {
+                    <option value="@t.Id">@t.TableNumber (@t.Capacity seats)</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label small">Customer Name</label>
+            <input name="customerName" class="form-control" required />
+        </div>
+        <div class="col-md-2">
+            <label class="form-label small">Phone</label>
+            <input name="customerPhone" class="form-control" />
+        </div>
+        <div class="col-md-1">
+            <label class="form-label small">Party Size</label>
+            <input name="partySize" type="number" value="2" class="form-control" />
+        </div>
+        <div class="col-md-2">
+            <label class="form-label small">Date &amp; Time</label>
+            <input name="reservationDateTime" type="datetime-local" class="form-control" required />
+        </div>
+        <div class="col-md-2">
+            <label class="form-label small">Notes</label>
+            <input name="notes" class="form-control" placeholder="optional" />
+        </div>
+        <div class="col-12 mt-2"><button class="btn btn-primary btn-sm"><i class="fa-solid fa-calendar-plus"></i> Book Table</button></div>
+    </form>
+</div>
+
+<div class="bo-card">
+    <table class="table align-middle">
+        <thead><tr><th>Table</th><th>Customer</th><th>Party</th><th>Date &amp; Time</th><th>Status</th><th class="text-end">Actions</th></tr></thead>
+        <tbody>
+        @foreach (var r in Model)
+        {
+            <tr>
+                <td>@r.Table?.TableNumber</td>
+                <td>@r.CustomerName <div class="text-muted small">@r.CustomerPhone</div></td>
+                <td>@r.PartySize</td>
+                <td>@r.ReservationDateTime.ToLocalTime().ToString("dd MMM yyyy, hh:mm tt")</td>
+                <td>
+                    @{
+                        var badgeClass = r.Status switch { ReservationStatus.Seated => "bg-success", ReservationStatus.Confirmed => "bg-info text-dark", _ => "bg-warning text-dark" };
+                    }
+                    <span class="badge @badgeClass">@r.Status</span>
+                </td>
+                <td class="text-end">
+                    @if (r.Status == ReservationStatus.Booked || r.Status == ReservationStatus.Confirmed)
+                    {
+                        <form asp-action="MarkSeated" asp-route-id="@r.Id" method="post" class="d-inline">
+                            <button class="btn btn-sm btn-outline-success">Seat</button>
+                        </form>
+                        <form asp-action="Cancel" asp-route-id="@r.Id" method="post" class="d-inline">
+                            <button class="btn btn-sm btn-outline-danger">Cancel</button>
+                        </form>
+                    }
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>

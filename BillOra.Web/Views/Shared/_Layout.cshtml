@@ -81,6 +81,19 @@
                                 </ul>
                             </li>
                         }
+
+@if (User.FindFirst("BusinessType")?.Value == "Restaurant")
+{
+    <li class="nav-item dropdown">
+        <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">Restaurant</a>
+        <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="/Tables">Tables</a></li>
+            <li><a class="dropdown-item" href="/Reservations">Reservations</a></li>
+            <li><a class="dropdown-item" href="/Orders">Orders / KOT</a></li>
+            <li><a class="dropdown-item" href="/Waiters">Waiters</a></li>
+        </ul>
+    </li>
+}
                     }
                 </ul>
                 <form asp-controller="Account" asp-action="Logout" method="post" class="d-flex">

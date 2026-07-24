@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using BillOra.Persistence;
 using BillOra.Persistence.Identity;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
@@ -10,11 +11,13 @@ public class AccountController : Controller
 {
     private readonly SignInManager<ApplicationUser> _signInManager;
     private readonly UserManager<ApplicationUser> _userManager;
+    private readonly BillOraDbContext _db;
 
-    public AccountController(SignInManager<ApplicationUser> signInManager, UserManager<ApplicationUser> userManager)
+    public AccountController(SignInManager<ApplicationUser> signInManager, UserManager<ApplicationUser> userManager, BillOraDbContext db)
     {
         _signInManager = signInManager;
         _userManager = userManager;
+        _db = db;
     }
 
     [HttpGet]
@@ -44,11 +47,18 @@ public class AccountController : Controller
 
         var roles = await _userManager.GetRolesAsync(user);
 
-        // Stamp CompanyId/StoreId onto the auth cookie so ICurrentTenantService
-        // (and every EF Core query filter) can read them without a DB round-trip.
+        // Stamp CompanyId/StoreId/BusinessType onto the auth cookie so
+        // ICurrentTenantService, EF Core query filters, and the restaurant-module
+        // gating (see RequireRestaurantAttribute) can all read them without a DB round-trip.
         var claims = new List<Claim>();
         if (user.CompanyId.HasValue) claims.Add(new Claim("CompanyId", user.CompanyId.Value.ToString()));
         if (user.StoreId.HasValue) claims.Add(new Claim("StoreId", user.StoreId.Value.ToString()));
+
+        if (user.StoreId.HasValue)
+        {
+            var store = await _db.Stores.FindAsync(user.StoreId.Value);
+            if (store != null) claims.Add(new Claim("BusinessType", store.BusinessType ?? ""));
+        }
 
         await _signInManager.SignInWithClaimsAsync(user, rememberMe, claims);
 

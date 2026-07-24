@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using BillOra.Domain.Entities;
 
 namespace BillOra.Web.Controllers;
 
@@ -30,8 +31,10 @@ public class DeveloperController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create(string companyName, string ownerEmail, string phone,
-        string storeName, string adminEmail, string adminPassword, int trialDays = 14, int maxStaffUsers = 5)
+   public async Task<IActionResult> Create(string companyName, string ownerEmail, string phone,
+        string storeName, string adminEmail, string adminPassword, int trialDays = 14, int maxStaffUsers = 5,
+        string businessType = "Retail", string? fssaiNumber = null)
+
     {
         if (string.IsNullOrWhiteSpace(companyName) || string.IsNullOrWhiteSpace(adminEmail) || string.IsNullOrWhiteSpace(adminPassword))
         {
@@ -65,10 +68,17 @@ public class DeveloperController : Controller
             Name = string.IsNullOrWhiteSpace(storeName) ? $"{companyName} Main Store" : storeName,
             InvoicePrefix = "INV",
             Currency = "INR",
-            GstEnabled = true
+            GstEnabled = true,
+BusinessType = businessType,
+FssaiNumber = fssaiNumber
         };
         _db.Stores.Add(store);
         await _db.SaveChangesAsync();
+  if (store.IsRestaurant)
+        {
+            _db.DiningTables.Add(new DiningTable { StoreId = store.Id, TableNumber = "T1", Capacity = 4 });
+            await _db.SaveChangesAsync();
+        }
 
         var admin = new ApplicationUser
         {

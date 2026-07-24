@@ -1,0 +1,47 @@
+@using BillOra.Domain.Enums
+@model List<RestaurantOrder>
+@{ ViewData["Title"] = "Orders"; }
+
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h3 class="mb-0">Active Orders</h3>
+    <div class="d-flex gap-2">
+        <a class="btn btn-outline-secondary btn-sm" href="/Tables"><i class="fa-solid fa-chair"></i> Tables</a>
+        <a class="btn btn-primary btn-sm" href="/Orders/Create"><i class="fa-solid fa-plus"></i> New Order</a>
+    </div>
+</div>
+
+@if (Model.Count == 0)
+{
+    <div class="bo-card text-center text-muted py-5">No active orders right now.</div>
+}
+else
+{
+    <div class="row g-3">
+        @foreach (var o in Model)
+        {
+            var statusBadge = o.Status switch
+            {
+                RestaurantOrderStatus.Open => "bg-secondary",
+                RestaurantOrderStatus.KotSent => "bg-warning text-dark",
+                RestaurantOrderStatus.Served => "bg-info text-dark",
+                _ => "bg-light text-dark"
+            };
+            <div class="col-md-4 col-6">
+                <a href="/Orders/Details/@o.Id" class="text-decoration-none">
+                    <div class="bo-card h-100">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="fw-bold">@o.OrderNumber</div>
+                            <span class="badge @statusBadge">@o.Status</span>
+                        </div>
+                        <div class="text-muted small mt-1">
+                            @o.OrderType
+                            @if (o.Table != null) { <text> — Table @o.Table.TableNumber</text> }
+                            @if (o.Waiter != null) { <text> — @o.Waiter.Name</text> }
+                        </div>
+                        <div class="text-muted small">@o.CreatedAt.ToLocalTime().ToString("dd MMM, hh:mm tt")</div>
+                    </div>
+                </a>
+            </div>
+        }
+    </div>
+}

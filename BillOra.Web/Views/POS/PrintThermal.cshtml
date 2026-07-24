@@ -50,6 +50,25 @@
     <hr />
     <p>
         Invoice: @Model.InvoiceNumber<br />
+ @if (!string.IsNullOrEmpty(Model.OrderNumber))
+    {
+        <hr />
+        <p>
+            Order: @Model.OrderNumber (@Model.OrderType)<br />
+            @if (!string.IsNullOrEmpty(Model.TableNumber))
+            {
+                <text>Table: @Model.TableNumber<br /></text>
+            }
+            @if (!string.IsNullOrEmpty(Model.WaiterName))
+            {
+                <text>Waiter: @Model.WaiterName<br /></text>
+            }
+            @if (!string.IsNullOrEmpty(store.FssaiNumber))
+            {
+                <text>FSSAI: @store.FssaiNumber</text>
+            }
+        </p>
+    }
         Date: @Model.SaleDate.ToLocalTime().ToString("dd MMM yyyy hh:mm tt")<br />
         @if (cfg.ShowCustomerName)
         {

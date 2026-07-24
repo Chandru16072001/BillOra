@@ -1,0 +1,90 @@
+@using BillOra.Domain.Enums
+@model List<DiningTable>
+@{
+    ViewData["Title"] = "Tables";
+    var openOrdersByTable = (Dictionary<int, int>)ViewBag.OpenOrdersByTable;
+    var reservationsByTable = (Dictionary<int, TableReservation>)ViewBag.ReservationsByTable;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h3 class="mb-0">Tables</h3>
+    <div class="d-flex gap-2">
+        <a class="btn btn-outline-secondary btn-sm" href="/Reservations"><i class="fa-solid fa-calendar-check"></i> Reservations</a>
+        <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#newTableModal"><i class="fa-solid fa-plus"></i> Add Table</button>
+    </div>
+</div>
+
+<div class="d-flex gap-3 mb-3 flex-wrap small">
+    <span><span class="table-dot bg-success"></span> Available</span>
+    <span><span class="table-dot bg-danger"></span> Occupied</span>
+    <span><span class="table-dot bg-warning"></span> Reserved</span>
+    <span><span class="table-dot bg-secondary"></span> Cleaning</span>
+</div>
+
+<div class="row g-3">
+    @foreach (var t in Model)
+    {
+        var statusClass = t.Status switch
+        {
+            TableStatus.Available => "table-card-available",
+            TableStatus.Occupied => "table-card-occupied",
+            TableStatus.Reserved => "table-card-reserved",
+            _ => "table-card-cleaning"
+        };
+        var hasOpenOrder = openOrdersByTable.ContainsKey(t.Id);
+        var reservation = reservationsByTable.GetValueOrDefault(t.Id);
+
+        <div class="col-6 col-md-4 col-lg-3">
+            <div class="table-card @statusClass">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div class="table-card-number">@t.TableNumber</div>
+                    <span class="badge bg-light text-dark">@t.Capacity <i class="fa-solid fa-user"></i></span>
+                </div>
+                <div class="text-muted small mb-2">@t.Section</div>
+                <div class="fw-semibold mb-2">@t.Status</div>
+
+                @if (reservation != null && t.Status != TableStatus.Occupied)
+                {
+                    <div class="small mb-2"><i class="fa-solid fa-calendar-check"></i> @reservation.CustomerName @reservation.ReservationDateTime.ToLocalTime().ToString("hh:mm tt")</div>
+                }
+
+                <div class="d-grid gap-1">
+                    @if (hasOpenOrder)
+                    {
+                        <a class="btn btn-sm btn-primary" href="/Orders/Details/@openOrdersByTable[t.Id]">View Order</a>
+                    }
+                    else if (t.Status == TableStatus.Available || t.Status == TableStatus.Reserved)
+                    {
+                        <a class="btn btn-sm btn-outline-primary" href="/Orders/Create?tableId=@t.Id">Start Order</a>
+                    }
+                    @if (t.Status != TableStatus.Available && !hasOpenOrder)
+                    {
+                        <form asp-action="SetStatus" asp-route-id="@t.Id" method="post">
+                            <input type="hidden" name="status" value="@TableStatus.Available" />
+                            <button class="btn btn-sm btn-outline-secondary w-100">Mark Available</button>
+                        </form>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<div class="modal fade" id="newTableModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form asp-action="Create" method="post">
+                <div class="modal-header"><h5 class="modal-title">Add Table</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                <div class="modal-body">
+                    <div class="mb-2"><label class="form-label small">Table Number</label><input name="tableNumber" class="form-control" required /></div>
+                    <div class="mb-2"><label class="form-label small">Capacity (seats)</label><input name="capacity" type="number" value="4" class="form-control" /></div>
+                    <div class="mb-2"><label class="form-label small">Section (optional)</label><input name="section" class="form-control" placeholder="e.g. Main Hall, Rooftop" /></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button class="btn btn-primary">Add Table</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

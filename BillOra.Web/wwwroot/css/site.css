@@ -251,3 +251,22 @@ body {
 @media (max-width: 576px) {
   .kpi-card .bo-stat-value { font-size: 1.25rem; }
 }
+
+
+/* ---------- Restaurant: Table grid ---------- */
+.table-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 4px; }
+.table-card {
+  border-radius: var(--bo-radius-sm);
+  padding: 1rem;
+  border: 2px solid transparent;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,.06);
+}
+.table-card-number { font-size: 1.3rem; font-weight: 700; }
+.table-card-available { border-color: #22c55e; background: #f3fdf6; }
+.table-card-occupied { border-color: #ef4444; background: #fef4f4; }
+.table-card-reserved { border-color: #f59e0b; background: #fffaf0; }
+.table-card-cleaning { border-color: #6b7280; background: #f7f7f8; }
+
+/* ---------- Restaurant: KOT ticket ---------- */
+.kot-ticket { font-family: 'Courier New', monospace; }

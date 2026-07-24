@@ -39,9 +39,31 @@
         </div>
 
         <h6 class="text-muted">First Store</h6>
-        <div class="mb-3">
-            <label class="form-label">Store Name</label>
-            <input name="storeName" class="form-control" placeholder="Defaults to '{Company Name} Main Store'" />
+        <div class="row g-3 mb-3">
+            <div class="col-md-6">
+                <label class="form-label">Store Name</label>
+                <input name="storeName" class="form-control" placeholder="Defaults to '{Company Name} Main Store'" />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Business Type</label>
+                <select name="businessType" id="businessTypeSelect" class="form-select" onchange="toggleFssaiField(this.value)">
+                    <option value="Retail">Retail</option>
+                    <option value="Wholesale">Wholesale</option>
+                    <option value="Restaurant">Restaurant</option>
+                    <option value="Pharmacy">Pharmacy</option>
+                    <option value="Supermarket">Supermarket</option>
+                    <option value="Services">Services</option>
+                    <option value="Other">Other</option>
+                </select>
+                <div class="form-text">
+                    Choosing <strong>Restaurant</strong> automatically enables Table Management,
+                    Reservations, Orders/KOT, and Waiter tracking for this client.
+                </div>
+            </div>
+            <div class="col-md-6" id="fssaiField" style="display:none;">
+                <label class="form-label">FSSAI License Number</label>
+                <input name="fssaiNumber" class="form-control" placeholder="Required for food businesses" />
+            </div>
         </div>
 
         <h6 class="text-muted">Store Admin Login</h6>
@@ -59,4 +81,9 @@
         <button class="btn btn-primary" type="submit">Create Client</button>
         <a class="btn btn-outline-secondary" href="/Developer">Cancel</a>
     </form>
+<script>
+function toggleFssaiField(value) {
+    document.getElementById('fssaiField').style.display = value === 'Restaurant' ? 'block' : 'none';
+}
+</script>
 </div>

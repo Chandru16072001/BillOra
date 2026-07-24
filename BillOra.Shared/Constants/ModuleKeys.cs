@@ -2,7 +2,9 @@ namespace BillOra.Shared.Constants;
 
 // The set of modules that can be individually granted/revoked per staff
 // member via the Staff Master screen. Keys match the [RequireModule("...")]
-// attribute values applied to each controller.
+// attribute values applied to each controller. The restaurant-only keys
+// (Tables/Reservations/Orders/Waiters) are harmless to grant on a non-restaurant
+// store - the controllers themselves are gated separately by [RequireRestaurant].
 public static class ModuleKeys
 {
     public const string Pos = "POS";
@@ -16,9 +18,16 @@ public static class ModuleKeys
     public const string Reports = "Reports";
     public const string Accounts = "Accounts";
 
+    // Restaurant module
+    public const string Tables = "Tables";
+    public const string Reservations = "Reservations";
+    public const string Orders = "Orders";
+    public const string Waiters = "Waiters";
+
     public static readonly string[] All =
     {
-        Pos, Items, Categories, Customers, Vendors, Purchases, Stock, ItemPrices, Reports, Accounts
+        Pos, Items, Categories, Customers, Vendors, Purchases, Stock, ItemPrices, Reports, Accounts,
+        Tables, Reservations, Orders, Waiters
     };
 
     public static readonly Dictionary<string, string> DisplayNames = new()
@@ -32,6 +41,10 @@ public static class ModuleKeys
         [Stock] = "Opening Stock",
         [ItemPrices] = "Price Master",
         [Reports] = "Reports",
-        [Accounts] = "Mini Accounts"
+        [Accounts] = "Mini Accounts",
+        [Tables] = "Tables (Restaurant)",
+        [Reservations] = "Reservations (Restaurant)",
+        [Orders] = "Orders / KOT (Restaurant)",
+        [Waiters] = "Waiters (Restaurant)"
     };
 }

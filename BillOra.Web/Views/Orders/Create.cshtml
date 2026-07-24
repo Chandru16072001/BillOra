@@ -1,0 +1,263 @@
+@{
+    ViewData["Title"] = "New Order";
+    var items = (IEnumerable<Item>)ViewBag.Items;
+    var tables = (IEnumerable<DiningTable>)ViewBag.Tables;
+    var waiters = (IEnumerable<Waiter>)ViewBag.Waiters;
+    var customers = (IEnumerable<Customer>)ViewBag.Customers;
+    int? preselectedTableId = ViewBag.PreselectedTableId;
+}
+@Html.AntiForgeryToken()
+
+<h3 class="mb-3">New Order</h3>
+
+<div class="billing-tabs">
+    <div class="tab-btn active" id="tabItemsBtn" onclick="switchTab('items')"><i class="fa-solid fa-magnifying-glass"></i> Items</div>
+    <div class="tab-btn" id="tabCartBtn" onclick="switchTab('cart')"><i class="fa-solid fa-utensils"></i> Order <span class="tab-count" id="cartCountBadge">0</span></div>
+</div>
+
+<div class="billing-shell">
+    <div class="billing-pane active" id="billingItemsPane">
+        <div class="bo-card mb-3">
+            <input id="itemSearch" class="form-control form-control-lg" placeholder="Search menu items..." autofocus />
+        </div>
+        <div id="itemGrid" class="row g-2">
+            @foreach (var i in items)
+            {
+                <div class="col-6 col-md-4 col-lg-3">
+                    <div class="pos-item-card" data-item-id="@i.Id" onclick="addToCart(@i.Id, '@i.Name.Replace("'", "\\'")', @i.SellingPrice.ToString(System.Globalization.CultureInfo.InvariantCulture))">
+                        <span class="pos-item-in-cart-badge" style="display:none;">0</span>
+                        @if (!string.IsNullOrEmpty(i.ImagePath))
+                        {
+                            <img src="@i.ImagePath" class="pos-item-thumb" alt="@i.Name" />
+                        }
+                        else
+                        {
+                            <div class="pos-item-thumb pos-item-thumb-placeholder"><i class="fa-solid fa-utensils"></i></div>
+                        }
+                        <div class="fw-semibold">@i.Name</div>
+                        <div class="text-primary fw-bold">₹@i.SellingPrice.ToString("N2")</div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="billing-pane" id="billingCartPane">
+        <div class="bo-card">
+            <div class="mb-2">
+                <label class="form-label small mb-1">Order Type</label>
+                <select id="orderType" class="form-select" onchange="toggleTableField()">
+                    <option value="DineIn">Dine-in</option>
+                    <option value="Takeaway">Takeaway</option>
+                    <option value="Delivery">Delivery</option>
+                </select>
+            </div>
+            <div class="mb-2" id="tableField">
+                <label class="form-label small mb-1">Table</label>
+                <select id="tableSelect" class="form-select">
+                    <option value="">-- select table --</option>
+                    @foreach (var t in tables)
+                    {
+                        <option value="@t.Id" selected="@(preselectedTableId == t.Id)">@t.TableNumber (@t.Capacity seats, @t.Status)</option>
+                    }
+                </select>
+            </div>
+            <div class="mb-2">
+                <label class="form-label small mb-1">Waiter / Server</label>
+                <select id="waiterSelect" class="form-select">
+                    <option value="">-- unassigned --</option>
+                    @foreach (var w in waiters)
+                    {
+                        <option value="@w.Id">@w.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="mb-2">
+                <label class="form-label small mb-1">Customer (optional)</label>
+                <select id="customerSelect" class="form-select">
+                    <option value="">Walk-in Customer</option>
+                    @foreach (var c in customers)
+                    {
+                        <option value="@c.Id">@c.Name</option>
+                    }
+                </select>
+            </div>
+
+            <div id="cartLines" style="max-height:30vh; overflow-y:auto;">
+                <p class="text-muted small" id="emptyCartMsg">No items added yet.</p>
+            </div>
+
+            <hr />
+            <div class="d-flex justify-content-between fw-bold fs-5"><span>Estimated Total</span><span id="grandTotal">₹0.00</span></div>
+
+            <div class="d-grid gap-2 mt-3">
+                <button class="btn btn-primary btn-lg" onclick="createOrder()"><i class="fa-solid fa-check"></i> Start Order</button>
+                <button class="btn btn-outline-secondary d-lg-none" onclick="switchTab('items')"><i class="fa-solid fa-arrow-left"></i> Back to Items</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="billing-sticky-footer" id="stickyFooter" onclick="switchTab('cart')">
+    <div>
+        <div class="fw-bold" id="stickyItemCount">0 items</div>
+        <div class="text-muted small" id="stickyTotal">₹0.00</div>
+    </div>
+    <button class="btn btn-primary"><i class="fa-solid fa-utensils"></i> View Order</button>
+</div>
+
+@section Scripts {
+<script>
+let cart = [];
+let currentTab = 'items';
+
+function toggleTableField() {
+    document.getElementById('tableField').style.display = document.getElementById('orderType').value === 'DineIn' ? 'block' : 'none';
+}
+toggleTableField();
+
+function switchTab(tab) {
+    currentTab = tab;
+    document.getElementById('billingItemsPane').classList.toggle('active', tab === 'items');
+    document.getElementById('billingCartPane').classList.toggle('active', tab === 'cart');
+    document.getElementById('tabItemsBtn').classList.toggle('active', tab === 'items');
+    document.getElementById('tabCartBtn').classList.toggle('active', tab === 'cart');
+    updateStickyFooter();
+    if (tab === 'items') window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+function updateStickyFooter() {
+    const footer = document.getElementById('stickyFooter');
+    footer.classList.toggle('visible', currentTab === 'items' && cart.length > 0 && window.innerWidth < 992);
+}
+window.addEventListener('resize', updateStickyFooter);
+
+function addToCart(id, name, price) {
+    const existing = cart.find(l => l.itemId === id);
+    if (existing) { existing.quantity += 1; }
+    else { cart.push({ itemId: id, name: name, unitPrice: price, quantity: 1, notes: '' }); }
+    renderCart();
+    syncItemCardBadges();
+}
+function removeLine(idx) { cart.splice(idx, 1); renderCart(); syncItemCardBadges(); }
+function stepQty(idx, delta) {
+    const newQty = Math.round((cart[idx].quantity + delta) * 100) / 100;
+    if (newQty <= 0) { cart.splice(idx, 1); } else { cart[idx].quantity = newQty; }
+    renderCart();
+    syncItemCardBadges();
+}
+function updateQty(idx, qty) {
+    qty = parseFloat(qty);
+    if (isNaN(qty) || qty <= 0) { cart.splice(idx, 1); } else { cart[idx].quantity = qty; }
+    renderCart();
+    syncItemCardBadges();
+}
+function updateNotes(idx, notes) { cart[idx].notes = notes; }
+function toggleLineDetails(idx) { document.getElementById('lineDetails_' + idx)?.classList.toggle('expanded'); }
+
+function syncItemCardBadges() {
+    document.querySelectorAll('.pos-item-card').forEach(card => {
+        const id = parseInt(card.dataset.itemId);
+        const line = cart.find(l => l.itemId === id);
+        const badge = card.querySelector('.pos-item-in-cart-badge');
+        if (!badge) return;
+        if (line) { badge.style.display = 'flex'; badge.innerText = line.quantity; }
+        else { badge.style.display = 'none'; }
+    });
+}
+
+function renderCart() {
+    const container = document.getElementById('cartLines');
+    if (cart.length === 0) {
+        container.innerHTML = '<p class="text-muted small" id="emptyCartMsg">No items added yet.</p>';
+        document.getElementById('grandTotal').innerText = '₹0.00';
+        document.getElementById('cartCountBadge').innerText = '0';
+        updateStickyFooter();
+        return;
+    }
+
+    let total = 0, totalQty = 0, html = '';
+    cart.forEach((line, idx) => {
+        const lineTotal = line.unitPrice * line.quantity;
+        total += lineTotal; totalQty += line.quantity;
+        html += `
+            <div class="pos-cart-line">
+                <div class="d-flex justify-content-between align-items-start">
+                    <span class="fw-semibold">${line.name}</span>
+                    <button class="btn btn-sm btn-link text-danger p-0" onclick="removeLine(${idx})"><i class="fa-solid fa-trash"></i></button>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mt-2 flex-wrap gap-2">
+                    <div class="qty-stepper">
+                        <button type="button" onclick="stepQty(${idx}, -1)">−</button>
+                        <input type="number" value="${line.quantity}" onchange="updateQty(${idx}, this.value)" />
+                        <button type="button" onclick="stepQty(${idx}, 1)">+</button>
+                    </div>
+                    <span class="fw-bold">₹${lineTotal.toFixed(2)}</span>
+                </div>
+                <div class="mt-1">
+                    <span class="billing-line-toggle" onclick="toggleLineDetails(${idx})"><i class="fa-solid fa-comment"></i> Add note (e.g. no onions)</span>
+                    <div class="billing-line-details gap-2 mt-2" id="lineDetails_${idx}">
+                        <input type="text" value="${line.notes}" class="form-control form-control-sm" onchange="updateNotes(${idx}, this.value)" />
+                    </div>
+                </div>
+            </div>`;
+    });
+    container.innerHTML = html;
+    document.getElementById('grandTotal').innerText = '₹' + total.toFixed(2);
+    document.getElementById('cartCountBadge').innerText = cart.length;
+    document.getElementById('stickyItemCount').innerText = totalQty + (totalQty === 1 ? ' item' : ' items');
+    document.getElementById('stickyTotal').innerText = '₹' + total.toFixed(2);
+    updateStickyFooter();
+}
+
+document.getElementById('itemSearch').addEventListener('input', async function () {
+    const term = this.value;
+    if (!term) return;
+    const res = await fetch('/Orders/SearchItems?term=' + encodeURIComponent(term));
+    const results = await res.json();
+    const grid = document.getElementById('itemGrid');
+    grid.innerHTML = '';
+    results.forEach(i => {
+        const thumb = i.imagePath ? `<img src="${i.imagePath}" class="pos-item-thumb" />` : `<div class="pos-item-thumb pos-item-thumb-placeholder"><i class="fa-solid fa-utensils"></i></div>`;
+        grid.innerHTML += `
+            <div class="col-6 col-md-4 col-lg-3">
+                <div class="pos-item-card" data-item-id="${i.id}" onclick="addToCart(${i.id}, '${i.name.replace("'", "\\'")}', ${i.sellingPrice})">
+                    <span class="pos-item-in-cart-badge" style="display:none;">0</span>
+                    ${thumb}
+                    <div class="fw-semibold">${i.name}</div>
+                    <div class="text-primary fw-bold">₹${i.sellingPrice.toFixed(2)}</div>
+                </div>
+            </div>`;
+    });
+    syncItemCardBadges();
+});
+
+async function createOrder() {
+    if (cart.length === 0) { alert('Add at least one item.'); return; }
+    const orderType = document.getElementById('orderType').value;
+    const tableId = document.getElementById('tableSelect').value;
+    if (orderType === 'DineIn' && !tableId) { alert('Select a table for a dine-in order.'); switchTab('cart'); return; }
+
+    const payload = {
+        orderType: orderType,
+        tableId: tableId || null,
+        waiterId: document.getElementById('waiterSelect').value || null,
+        customerId: document.getElementById('customerSelect').value || null,
+        lines: cart.map(l => ({ itemId: l.itemId, quantity: l.quantity, notes: l.notes }))
+    };
+
+    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+    const res = await fetch('/Orders/Create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token || '' },
+        body: JSON.stringify(payload)
+    });
+
+    if (res.ok) {
+        const result = await res.json();
+        window.location.href = '/Orders/Details/' + result.orderId;
+    } else {
+        alert('Could not start the order. ' + (await res.text()));
+    }
+}
+</script>
+}

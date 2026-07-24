@@ -36,4 +36,6 @@ public class Store : BaseEntity
     // Billing behavior toggles (SRS: configurable via Settings)
     public bool StockValidationEnabled { get; set; } = true;
     public bool BatchTrackingEnabled { get; set; } = false;
+	    public bool IsRestaurant => !string.IsNullOrWhiteSpace(BusinessType)
+        && BusinessType.Equals("Restaurant", StringComparison.OrdinalIgnoreCase);
 }
