@@ -7,16 +7,30 @@ using BillOra.Web.Middleware;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
+AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+
 var builder = WebApplication.CreateBuilder(args);
 
-// ---- Database (Sqlite for single-store / dev, SQL Server for multi-store / prod) ----
+// ---- Database (Sqlite / PostgreSQL / SQL Server) ----
 var provider = builder.Configuration["DatabaseProvider"] ?? "Sqlite";
+
 builder.Services.AddDbContext<BillOraDbContext>((sp, options) =>
 {
-    if (provider == "SqlServer")
-        options.UseSqlServer(builder.Configuration.GetConnectionString("SqlServerConnection"));
+    if (provider == "Postgres")
+    {
+        options.UseNpgsql(
+            builder.Configuration.GetConnectionString("PostgresConnection"));
+    }
+    else if (provider == "SqlServer")
+    {
+        options.UseSqlServer(
+            builder.Configuration.GetConnectionString("SqlServerConnection"));
+    }
     else
-        options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection"));
+    {
+        options.UseSqlite(
+            builder.Configuration.GetConnectionString("DefaultConnection"));
+    }
 });
 
 // ---- Identity ----

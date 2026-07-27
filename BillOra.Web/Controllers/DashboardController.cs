@@ -27,13 +27,20 @@ public class DashboardController : Controller
 
     public async Task<IActionResult> Index()
     {
-        var today = DateTime.UtcNow.Date;
+        var today = DateTime.SpecifyKind(
+    DateTime.UtcNow.Date,
+    DateTimeKind.Utc);
         var yesterday = today.AddDays(-1);
-        var monthStart = new DateTime(today.Year, today.Month, 1);
+       var monthStart = new DateTime(today.Year, today.Month, 1, 0, 0, 0, DateTimeKind.Utc);
         var daysElapsedThisMonth = today.Day;
         var prevMonthStart = monthStart.AddMonths(-1);
+prevMonthStart = DateTime.SpecifyKind(prevMonthStart, DateTimeKind.Utc);
         var prevMonthComparableEnd = prevMonthStart.AddDays(daysElapsedThisMonth); // exclusive, same day-count window
-        var trendStart = today.AddDays(-13); // 14-day trend
+prevMonthComparableEnd = DateTime.SpecifyKind(
+    prevMonthComparableEnd,
+    DateTimeKind.Utc);        
+var trendStart = today.AddDays(-13); // 14-day trend
+trendStart = DateTime.SpecifyKind(trendStart, DateTimeKind.Utc);
 
         var vm = new DashboardViewModel();
 

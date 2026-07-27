@@ -56,6 +56,20 @@ public class BillOraDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<RestaurantOrder> RestaurantOrders => Set<RestaurantOrder>();
     public DbSet<RestaurantOrderItem> RestaurantOrderItems => Set<RestaurantOrderItem>();
 
+
+protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
+{
+    base.ConfigureConventions(configurationBuilder);
+
+    configurationBuilder
+        .Properties<DateTime>()
+        .HaveColumnType("timestamp with time zone");
+
+    configurationBuilder
+        .Properties<DateTime?>()
+        .HaveColumnType("timestamp with time zone");
+}
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
