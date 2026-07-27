@@ -79,6 +79,12 @@ var app = builder.Build();
 // ---- Seed roles / demo tenant / dev login on startup ----
 using (var scope = app.Services.CreateScope())
 {
+    var db = scope.ServiceProvider.GetRequiredService<BillOraDbContext>();
+
+    // Apply pending migrations automatically
+    await db.Database.MigrateAsync();
+
+    // Seed default data
     await DbSeeder.SeedAsync(scope.ServiceProvider);
 }
 
