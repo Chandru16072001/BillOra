@@ -74,6 +74,13 @@ builder.Services.AddControllersWithViews()
         options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
     });
 
+
+var conn = builder.Configuration.GetConnectionString("PostgresConnection");
+
+Console.WriteLine("====================================");
+Console.WriteLine(conn);
+Console.WriteLine("====================================");
+
 var app = builder.Build();
 
 // ---- Seed roles / demo tenant / dev login on startup ----
