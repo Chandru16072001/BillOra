@@ -38,4 +38,8 @@ public class Store : BaseEntity
     public bool BatchTrackingEnabled { get; set; } = false;
 	    public bool IsRestaurant => !string.IsNullOrWhiteSpace(BusinessType)
         && BusinessType.Equals("Restaurant", StringComparison.OrdinalIgnoreCase);
+
+ public bool IsPaintingShop => !string.IsNullOrWhiteSpace(BusinessType)
+        && BusinessType.Equals("Painting Shop", StringComparison.OrdinalIgnoreCase);
+public decimal MaxDiscountPercentWithoutApproval { get; set; } = 10;
 }

@@ -55,6 +55,8 @@ public class Item : TenantEntity
     public decimal ReorderLevel { get; set; }
 
     public string? ImagePath { get; set; }
+
+	public decimal? CoverageSqFtPerLiter { get; set; }
 }
 
 public class Customer : TenantEntity
@@ -72,6 +74,7 @@ public class Customer : TenantEntity
     public decimal CreditLimit { get; set; }
     public decimal OutstandingAmount { get; set; }
     public int LoyaltyPoints { get; set; }
+public CustomerType CustomerType { get; set; } = CustomerType.Regular;
 }
 
 public class Vendor : TenantEntity

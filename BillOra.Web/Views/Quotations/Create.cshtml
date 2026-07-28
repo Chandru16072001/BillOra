@@ -1,0 +1,303 @@
+@{
+    ViewData["Title"] = "New Quotation";
+    var items = (IEnumerable<Item>)ViewBag.Items;
+    var customers = (IEnumerable<Customer>)ViewBag.Customers;
+}
+@Html.AntiForgeryToken()
+
+<h3 class="mb-3">New Quotation</h3>
+
+<div class="row g-3">
+    <div class="col-lg-7">
+        <div class="bo-card mb-3">
+            <h5 class="mb-3"><i class="fa-solid fa-ruler-combined"></i> Room / Wall Estimator</h5>
+            <p class="text-muted small">Enter room dimensions to calculate paint required — the result gets added as a quotation line with full traceability of how the quantity was worked out.</p>
+            <div class="row g-2">
+                <div class="col-md-4">
+                    <label class="form-label small">Room Name</label>
+                    <input id="estRoomName" class="form-control form-control-sm" placeholder="e.g. Living Room" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small">Wall Perimeter (ft)</label>
+                    <input id="estPerimeter" type="number" step="0.1" class="form-control form-control-sm" placeholder="e.g. 60" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small">Wall Height (ft)</label>
+                    <input id="estHeight" type="number" step="0.1" class="form-control form-control-sm" placeholder="e.g. 10" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small">Doors</label>
+                    <input id="estDoors" type="number" value="1" class="form-control form-control-sm" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small">Windows</label>
+                    <input id="estWindows" type="number" value="2" class="form-control form-control-sm" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small">Coats</label>
+                    <input id="estCoats" type="number" value="2" class="form-control form-control-sm" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small">Wastage %</label>
+                    <input id="estWastage" type="number" value="5" class="form-control form-control-sm" />
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label small">Paint Product</label>
+                    <select id="estItem" class="form-select form-select-sm" onchange="onEstItemChange()">
+                        <option value="">-- select product --</option>
+                        @foreach (var i in items)
+                        {
+                            <option value="@i.Id" data-price="@i.SellingPrice.ToString(System.Globalization.CultureInfo.InvariantCulture)" data-coverage="@((i.CoverageSqFtPerLiter ?? 120).ToString(System.Globalization.CultureInfo.InvariantCulture))" data-gst="@i.GstPercent.ToString(System.Globalization.CultureInfo.InvariantCulture)">@i.Name</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small">Shade</label>
+                    <select id="estShade" class="form-select form-select-sm">
+                        <option value="">-- select product first --</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small">Coverage (sq ft / liter)</label>
+                    <input id="estCoverage" type="number" step="1" value="120" class="form-control form-control-sm" />
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center mt-3 p-2" style="background:var(--bo-primary-light);border-radius:8px;">
+                <div>
+                    <div class="small text-muted">Paintable Area: <span id="estArea">0</span> sq ft</div>
+                    <div class="fw-bold">Liters Required: <span id="estLiters">0</span> L</div>
+                </div>
+                <button class="btn btn-primary btn-sm" onclick="addEstimateToQuotation()"><i class="fa-solid fa-plus"></i> Add to Quotation</button>
+            </div>
+        </div>
+
+        <div class="bo-card">
+            <h5 class="mb-3">Add Item Directly</h5>
+            <div class="row g-2">
+                <div class="col-md-5">
+                    <select id="directItem" class="form-select form-select-sm">
+                        <option value="">-- select product --</option>
+                        @foreach (var i in items)
+                        {
+                            <option value="@i.Id" data-price="@i.SellingPrice.ToString(System.Globalization.CultureInfo.InvariantCulture)" data-gst="@i.GstPercent.ToString(System.Globalization.CultureInfo.InvariantCulture)">@i.Name</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select id="directShade" class="form-select form-select-sm">
+                        <option value="">-- shade (optional) --</option>
+                    </select>
+                </div>
+                <div class="col-md-2"><input id="directQty" type="number" value="1" step="0.5" class="form-control form-control-sm" placeholder="Qty (L)" /></div>
+                <div class="col-md-2"><button class="btn btn-outline-primary btn-sm w-100" onclick="addDirectLine()">Add</button></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <div class="bo-card">
+            <div class="mb-2">
+                <label class="form-label small mb-1">Customer</label>
+                <select id="customerSelect" class="form-select">
+                    <option value="">Walk-in Customer</option>
+                    @foreach (var c in customers)
+                    {
+                        <option value="@c.Id">@c.Name (@c.CustomerType)</option>
+                    }
+                </select>
+            </div>
+            <div class="mb-2">
+                <label class="form-label small mb-1">Valid Until</label>
+                <input id="validUntil" type="date" class="form-control" />
+            </div>
+
+            <div id="quoteLines" style="max-height:36vh; overflow-y:auto;">
+                <p class="text-muted small" id="emptyMsg">No lines added yet.</p>
+            </div>
+
+            <hr />
+            <div class="d-flex justify-content-between fw-bold fs-5"><span>Estimated Total</span><span id="grandTotal">₹0.00</span></div>
+            <div class="mb-2 mt-2">
+                <label class="form-label small mb-1">Notes</label>
+                <textarea id="notes" class="form-control" rows="2"></textarea>
+            </div>
+
+            <button class="btn btn-primary btn-lg w-100 mt-2" onclick="saveQuotation()"><i class="fa-solid fa-file-invoice"></i> Save Quotation</button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+let lines = [];
+
+async function onEstItemChange() {
+    const select = document.getElementById('estItem');
+    const opt = select.options[select.selectedIndex];
+    document.getElementById('estCoverage').value = opt.dataset.coverage || 120;
+    await loadShades(opt.value, 'estShade');
+}
+
+document.querySelectorAll('#directItem')[0]?.addEventListener('change', function () {
+    loadShades(this.value, 'directShade');
+});
+
+async function loadShades(itemId, selectId) {
+    const select = document.getElementById(selectId);
+    select.innerHTML = '<option value="">-- none --</option>';
+    if (!itemId) return;
+    const res = await fetch('/Quotations/ShadesForItem?itemId=' + itemId);
+    const shades = await res.json();
+    shades.forEach(s => {
+        const opt = document.createElement('option');
+        opt.value = s.id;
+        opt.text = s.shadeName + ' (' + s.shadeCode + ')';
+        select.appendChild(opt);
+    });
+}
+
+function calcEstimate() {
+    const perimeter = parseFloat(document.getElementById('estPerimeter').value) || 0;
+    const height = parseFloat(document.getElementById('estHeight').value) || 0;
+    const doors = parseInt(document.getElementById('estDoors').value) || 0;
+    const windows = parseInt(document.getElementById('estWindows').value) || 0;
+    const coats = parseInt(document.getElementById('estCoats').value) || 1;
+    const wastage = parseFloat(document.getElementById('estWastage').value) || 0;
+    const coverage = parseFloat(document.getElementById('estCoverage').value) || 120;
+
+    const doorArea = 21, windowArea = 15; // standard average sq ft per door/window
+    let area = (perimeter * height) - (doors * doorArea) - (windows * windowArea);
+    if (area < 0) area = 0;
+
+    const liters = coverage > 0 ? (area * coats * (1 + wastage / 100)) / coverage : 0;
+
+    document.getElementById('estArea').innerText = area.toFixed(1);
+    document.getElementById('estLiters').innerText = liters.toFixed(2);
+    return { area, liters };
+}
+
+['estPerimeter', 'estHeight', 'estDoors', 'estWindows', 'estCoats', 'estWastage', 'estCoverage'].forEach(id => {
+    document.getElementById(id).addEventListener('input', calcEstimate);
+});
+
+function addEstimateToQuotation() {
+    const itemSelect = document.getElementById('estItem');
+    if (!itemSelect.value) { alert('Select a paint product first.'); return; }
+    const opt = itemSelect.options[itemSelect.selectedIndex];
+    const { area, liters } = calcEstimate();
+    if (liters <= 0) { alert('Enter wall dimensions first.'); return; }
+
+    const shadeSelect = document.getElementById('estShade');
+    const shadeOpt = shadeSelect.options[shadeSelect.selectedIndex];
+
+    lines.push({
+        itemId: parseInt(itemSelect.value),
+        itemName: opt.text + (shadeOpt.value ? ' - ' + shadeOpt.text : ''),
+        shadeColorId: shadeOpt.value || null,
+        quantity: Math.round(liters * 100) / 100,
+        unitPrice: parseFloat(opt.dataset.price),
+        discount: 0,
+        gstPercent: parseFloat(opt.dataset.gst),
+        roomName: document.getElementById('estRoomName').value,
+        wallPerimeterFt: parseFloat(document.getElementById('estPerimeter').value) || null,
+        wallHeightFt: parseFloat(document.getElementById('estHeight').value) || null,
+        doors: parseInt(document.getElementById('estDoors').value) || null,
+        windows: parseInt(document.getElementById('estWindows').value) || null,
+        coats: parseInt(document.getElementById('estCoats').value) || null,
+        wastagePercent: parseFloat(document.getElementById('estWastage').value) || null,
+        coverageRateUsed: parseFloat(document.getElementById('estCoverage').value) || null
+    });
+    renderLines();
+}
+
+function addDirectLine() {
+    const itemSelect = document.getElementById('directItem');
+    if (!itemSelect.value) { alert('Select a product.'); return; }
+    const opt = itemSelect.options[itemSelect.selectedIndex];
+    const shadeSelect = document.getElementById('directShade');
+    const shadeOpt = shadeSelect.options[shadeSelect.selectedIndex];
+    const qty = parseFloat(document.getElementById('directQty').value) || 1;
+
+    lines.push({
+        itemId: parseInt(itemSelect.value),
+        itemName: opt.text + (shadeOpt.value ? ' - ' + shadeOpt.text : ''),
+        shadeColorId: shadeOpt.value || null,
+        quantity: qty,
+        unitPrice: parseFloat(opt.dataset.price),
+        discount: 0,
+        gstPercent: parseFloat(opt.dataset.gst)
+    });
+    renderLines();
+}
+
+function removeLine(idx) { lines.splice(idx, 1); renderLines(); }
+function updateLineQty(idx, qty) { lines[idx].quantity = parseFloat(qty) || 0; renderLines(); }
+function updateLineDiscount(idx, discount) { lines[idx].discount = parseFloat(discount) || 0; renderLines(); }
+
+function renderLines() {
+    const container = document.getElementById('quoteLines');
+    if (lines.length === 0) {
+        container.innerHTML = '<p class="text-muted small" id="emptyMsg">No lines added yet.</p>';
+        document.getElementById('grandTotal').innerText = '₹0.00';
+        return;
+    }
+
+    let total = 0, html = '';
+    lines.forEach((l, idx) => {
+        const lineBase = (l.unitPrice * l.quantity) - l.discount;
+        const lineTax = lineBase * l.gstPercent / 100;
+        const lineTotal = lineBase + lineTax;
+        total += lineTotal;
+
+        html += `
+            <div class="pos-cart-line">
+                <div class="d-flex justify-content-between">
+                    <span class="fw-semibold">${l.itemName}</span>
+                    <button class="btn btn-sm btn-link text-danger p-0" onclick="removeLine(${idx})"><i class="fa-solid fa-trash"></i></button>
+                </div>
+                ${l.roomName ? `<div class="text-muted small">${l.roomName}</div>` : ''}
+                <div class="d-flex align-items-center gap-2 mt-1">
+                    <input type="number" min="0.01" step="0.01" value="${l.quantity}" class="form-control form-control-sm" style="width:80px" onchange="updateLineQty(${idx}, this.value)" />
+                    <span class="small text-muted">L @@ ₹${l.unitPrice.toFixed(2)}</span>
+                    <input type="number" min="0" step="0.01" value="${l.discount}" class="form-control form-control-sm" style="width:80px" onchange="updateLineDiscount(${idx}, this.value)" placeholder="Discount" />
+                    <span class="fw-bold ms-auto">₹${lineTotal.toFixed(2)}</span>
+                </div>
+            </div>`;
+    });
+    container.innerHTML = html;
+    document.getElementById('grandTotal').innerText = '₹' + total.toFixed(2);
+}
+
+async function saveQuotation() {
+    if (lines.length === 0) { alert('Add at least one line.'); return; }
+
+    const payload = {
+        customerId: document.getElementById('customerSelect').value || null,
+        validUntil: document.getElementById('validUntil').value || null,
+        notes: document.getElementById('notes').value,
+        lines: lines.map(l => ({
+            itemId: l.itemId, shadeColorId: l.shadeColorId ? parseInt(l.shadeColorId) : null,
+            quantity: l.quantity, unitPrice: l.unitPrice, discount: l.discount,
+            roomName: l.roomName || null, wallPerimeterFt: l.wallPerimeterFt || null, wallHeightFt: l.wallHeightFt || null,
+            doors: l.doors || null, windows: l.windows || null, coats: l.coats || null,
+            wastagePercent: l.wastagePercent || null, coverageRateUsed: l.coverageRateUsed || null
+        }))
+    };
+
+    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+    const res = await fetch('/Quotations/Create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token || '' },
+        body: JSON.stringify(payload)
+    });
+
+    if (res.ok) {
+        const result = await res.json();
+        window.location.href = '/Quotations/Details/' + result.quotationId;
+    } else {
+        alert('Could not save the quotation. ' + (await res.text()));
+    }
+}
+</script>
+}

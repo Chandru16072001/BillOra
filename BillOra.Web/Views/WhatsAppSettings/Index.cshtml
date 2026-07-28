@@ -1,0 +1,82 @@
+@model WhatsAppSettings
+@{
+    ViewData["Title"] = "WhatsApp Settings";
+    bool hasToken = ViewBag.HasToken;
+    var logs = (List<WhatsAppMessageLog>)ViewBag.RecentLogs;
+}
+
+<h3 class="mb-4">WhatsApp Integration</h3>
+<p class="text-muted">Connects directly to Meta's WhatsApp Cloud API — no third-party service involved. See the setup guide for how to get these values from Meta Business Manager.</p>
+
+@if (TempData["Success"] != null) { <div class="alert alert-success py-2">@TempData["Success"]</div> }
+@if (TempData["Error"] != null) { <div class="alert alert-danger py-2">@TempData["Error"]</div> }
+
+<div class="bo-card mb-4" style="max-width:720px;">
+    <form asp-action="Save" method="post">
+        <div class="row g-3">
+            <div class="col-12">
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" role="switch" name="isEnabled" value="true" checked="@Model.IsEnabled" id="isEnabled" />
+                    <label class="form-check-label" for="isEnabled"><strong>Enable WhatsApp sending</strong></label>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Phone Number ID</label>
+                <input name="phoneNumberId" value="@Model.PhoneNumberId" class="form-control" placeholder="from Meta -> WhatsApp -> API Setup" />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">WhatsApp Business Account ID (WABA)</label>
+                <input name="whatsAppBusinessAccountId" value="@Model.WhatsAppBusinessAccountId" class="form-control" />
+            </div>
+            <div class="col-md-8">
+                <label class="form-label">Access Token @(hasToken ? "(already saved — leave blank to keep it)" : "")</label>
+                <input name="accessToken" type="password" class="form-control" placeholder="@(hasToken ? "••••••••••••••••" : "System User permanent token")" />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Default Country Code</label>
+                <input name="defaultCountryCode" value="@Model.DefaultCountryCode" class="form-control" placeholder="91" />
+                <div class="form-text">Used for 10-digit numbers with no country code.</div>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Approved Template Name</label>
+                <input name="templateName" value="@Model.TemplateName" class="form-control" required />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Template Language Code</label>
+                <input name="templateLanguageCode" value="@Model.TemplateLanguageCode" class="form-control" placeholder="en_US" required />
+            </div>
+        </div>
+        <button class="btn btn-primary mt-4" type="submit">Save Settings</button>
+    </form>
+</div>
+
+<div class="bo-card mb-4" style="max-width:720px;">
+    <h5 class="mb-2">Send a Test Invoice</h5>
+    <p class="text-muted small">Sends your most recent sale's invoice to a number of your choosing, using the settings above — the same code path as the real "Send via WhatsApp" button.</p>
+    <form asp-action="SendTest" method="post" class="d-flex gap-2">
+        <input name="testPhone" class="form-control" placeholder="e.g. 9876543210" required />
+        <button class="btn btn-outline-primary">Send Test</button>
+    </form>
+</div>
+
+<div class="bo-card">
+    <h5 class="mb-2">Recent Send Attempts</h5>
+    <table class="table table-sm">
+        <thead><tr><th>Date</th><th>Invoice</th><th>Phone</th><th>Status</th><th>Details</th></tr></thead>
+        <tbody>
+        @foreach (var log in logs)
+        {
+            <tr>
+                <td>@log.SentAt.ToLocalTime().ToString("dd MMM yyyy hh:mm tt")</td>
+                <td>@log.Sale?.InvoiceNumber</td>
+                <td>@log.PhoneNumber</td>
+                <td>
+                    @if (log.Success) { <span class="badge bg-success">Sent</span> }
+                    else { <span class="badge bg-danger">Failed</span> }
+                </td>
+                <td class="text-muted small">@log.ErrorMessage</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>

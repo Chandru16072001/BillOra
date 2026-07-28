@@ -7,7 +7,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace BillOra.Persistence.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreatePostgres : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -207,6 +207,7 @@ namespace BillOra.Persistence.Migrations
                     CreditLimit = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
                     OutstandingAmount = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
                     LoyaltyPoints = table.Column<int>(type: "integer", nullable: false),
+                    CustomerType = table.Column<int>(type: "integer", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
@@ -442,6 +443,30 @@ namespace BillOra.Persistence.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "WhatsAppSettingsEntries",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    PhoneNumberId = table.Column<string>(type: "text", nullable: true),
+                    WhatsAppBusinessAccountId = table.Column<string>(type: "text", nullable: true),
+                    AccessTokenEncrypted = table.Column<string>(type: "text", nullable: true),
+                    TemplateName = table.Column<string>(type: "text", nullable: false),
+                    TemplateLanguageCode = table.Column<string>(type: "text", nullable: false),
+                    DefaultCountryCode = table.Column<string>(type: "text", nullable: false),
+                    IsEnabled = table.Column<bool>(type: "boolean", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
+                    StoreId = table.Column<int>(type: "integer", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_WhatsAppSettingsEntries", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "AspNetRoleClaims",
                 columns: table => new
                 {
@@ -602,6 +627,7 @@ namespace BillOra.Persistence.Migrations
                     GstEnabled = table.Column<bool>(type: "boolean", nullable: false),
                     StockValidationEnabled = table.Column<bool>(type: "boolean", nullable: false),
                     BatchTrackingEnabled = table.Column<bool>(type: "boolean", nullable: false),
+                    MaxDiscountPercentWithoutApproval = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
@@ -616,6 +642,43 @@ namespace BillOra.Persistence.Migrations
                         principalTable: "Companies",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Quotations",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    QuotationNumber = table.Column<string>(type: "text", nullable: false),
+                    CustomerId = table.Column<int>(type: "integer", nullable: true),
+                    QuotationDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    ValidUntil = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    Status = table.Column<int>(type: "integer", nullable: false),
+                    SubTotal = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
+                    DiscountAmount = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
+                    DiscountRequiresApproval = table.Column<bool>(type: "boolean", nullable: false),
+                    DiscountApproved = table.Column<bool>(type: "boolean", nullable: false),
+                    DiscountApprovedByUserId = table.Column<string>(type: "text", nullable: true),
+                    TaxAmount = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
+                    GrandTotal = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
+                    Notes = table.Column<string>(type: "text", nullable: true),
+                    ConvertedSaleId = table.Column<int>(type: "integer", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
+                    StoreId = table.Column<int>(type: "integer", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Quotations", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Quotations_Customers_CustomerId",
+                        column: x => x.CustomerId,
+                        principalTable: "Customers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -798,6 +861,7 @@ namespace BillOra.Persistence.Migrations
                     CurrentStock = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
                     ReorderLevel = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
                     ImagePath = table.Column<string>(type: "text", nullable: true),
+                    CoverageSqFtPerLiter = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
@@ -864,6 +928,35 @@ namespace BillOra.Persistence.Migrations
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_SalesReturns_Sales_SaleId",
+                        column: x => x.SaleId,
+                        principalTable: "Sales",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "WhatsAppMessageLogs",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    SaleId = table.Column<int>(type: "integer", nullable: false),
+                    PhoneNumber = table.Column<string>(type: "text", nullable: false),
+                    Success = table.Column<bool>(type: "boolean", nullable: false),
+                    WhatsAppMessageId = table.Column<string>(type: "text", nullable: true),
+                    ErrorMessage = table.Column<string>(type: "text", nullable: true),
+                    SentAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
+                    StoreId = table.Column<int>(type: "integer", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_WhatsAppMessageLogs", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_WhatsAppMessageLogs_Sales_SaleId",
                         column: x => x.SaleId,
                         principalTable: "Sales",
                         principalColumn: "Id",
@@ -1037,6 +1130,37 @@ namespace BillOra.Persistence.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "ShadeColors",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    ItemId = table.Column<int>(type: "integer", nullable: false),
+                    ShadeCode = table.Column<string>(type: "text", nullable: false),
+                    ShadeName = table.Column<string>(type: "text", nullable: false),
+                    BaseType = table.Column<string>(type: "text", nullable: true),
+                    ColorFormula = table.Column<string>(type: "text", nullable: true),
+                    HexColor = table.Column<string>(type: "text", nullable: true),
+                    IsCustomShade = table.Column<bool>(type: "boolean", nullable: false),
+                    ReplacesShadeId = table.Column<int>(type: "integer", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
+                    StoreId = table.Column<int>(type: "integer", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ShadeColors", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ShadeColors_Items_ItemId",
+                        column: x => x.ItemId,
+                        principalTable: "Items",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "StockBatches",
                 columns: table => new
                 {
@@ -1105,6 +1229,51 @@ namespace BillOra.Persistence.Migrations
                         principalTable: "SalesReturns",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "QuotationItems",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    QuotationId = table.Column<int>(type: "integer", nullable: false),
+                    ItemId = table.Column<int>(type: "integer", nullable: false),
+                    ShadeColorId = table.Column<int>(type: "integer", nullable: true),
+                    Quantity = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
+                    UnitPrice = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
+                    Discount = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
+                    LineTotal = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
+                    RoomName = table.Column<string>(type: "text", nullable: true),
+                    WallPerimeterFt = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: true),
+                    WallHeightFt = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: true),
+                    Doors = table.Column<int>(type: "integer", nullable: true),
+                    Windows = table.Column<int>(type: "integer", nullable: true),
+                    Coats = table.Column<int>(type: "integer", nullable: true),
+                    WastagePercent = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: true),
+                    CoverageRateUsed = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_QuotationItems", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_QuotationItems_Items_ItemId",
+                        column: x => x.ItemId,
+                        principalTable: "Items",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_QuotationItems_Quotations_QuotationId",
+                        column: x => x.QuotationId,
+                        principalTable: "Quotations",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_QuotationItems_ShadeColors_ShadeColorId",
+                        column: x => x.ShadeColorId,
+                        principalTable: "ShadeColors",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateIndex(
@@ -1217,6 +1386,32 @@ namespace BillOra.Persistence.Migrations
                 column: "VendorId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_QuotationItems_ItemId",
+                table: "QuotationItems",
+                column: "ItemId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_QuotationItems_QuotationId",
+                table: "QuotationItems",
+                column: "QuotationId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_QuotationItems_ShadeColorId",
+                table: "QuotationItems",
+                column: "ShadeColorId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Quotations_CustomerId",
+                table: "Quotations",
+                column: "CustomerId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Quotations_StoreId_QuotationNumber",
+                table: "Quotations",
+                columns: new[] { "StoreId", "QuotationNumber" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_RestaurantOrderItems_ItemId",
                 table: "RestaurantOrderItems",
                 column: "ItemId");
@@ -1299,6 +1494,16 @@ namespace BillOra.Persistence.Migrations
                 column: "SaleId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_ShadeColors_ItemId",
+                table: "ShadeColors",
+                column: "ItemId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ShadeColors_StoreId_ItemId_ShadeCode",
+                table: "ShadeColors",
+                columns: new[] { "StoreId", "ItemId", "ShadeCode" });
+
+            migrationBuilder.CreateIndex(
                 name: "IX_StaffModulePermissions_ApplicationUserId_ModuleKey",
                 table: "StaffModulePermissions",
                 columns: new[] { "ApplicationUserId", "ModuleKey" },
@@ -1328,6 +1533,11 @@ namespace BillOra.Persistence.Migrations
                 name: "IX_TableReservations_TableId",
                 table: "TableReservations",
                 column: "TableId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WhatsAppMessageLogs_SaleId",
+                table: "WhatsAppMessageLogs",
+                column: "SaleId");
         }
 
         /// <inheritdoc />
@@ -1376,6 +1586,9 @@ namespace BillOra.Persistence.Migrations
                 name: "PurchaseItems");
 
             migrationBuilder.DropTable(
+                name: "QuotationItems");
+
+            migrationBuilder.DropTable(
                 name: "RestaurantOrderItems");
 
             migrationBuilder.DropTable(
@@ -1397,6 +1610,12 @@ namespace BillOra.Persistence.Migrations
                 name: "Taxes");
 
             migrationBuilder.DropTable(
+                name: "WhatsAppMessageLogs");
+
+            migrationBuilder.DropTable(
+                name: "WhatsAppSettingsEntries");
+
+            migrationBuilder.DropTable(
                 name: "AspNetRoles");
 
             migrationBuilder.DropTable(
@@ -1404,6 +1623,12 @@ namespace BillOra.Persistence.Migrations
 
             migrationBuilder.DropTable(
                 name: "Purchases");
+
+            migrationBuilder.DropTable(
+                name: "Quotations");
+
+            migrationBuilder.DropTable(
+                name: "ShadeColors");
 
             migrationBuilder.DropTable(
                 name: "RestaurantOrders");

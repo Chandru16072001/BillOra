@@ -2,9 +2,10 @@ namespace BillOra.Shared.Constants;
 
 // The set of modules that can be individually granted/revoked per staff
 // member via the Staff Master screen. Keys match the [RequireModule("...")]
-// attribute values applied to each controller. The restaurant-only keys
-// (Tables/Reservations/Orders/Waiters) are harmless to grant on a non-restaurant
-// store - the controllers themselves are gated separately by [RequireRestaurant].
+// attribute values applied to each controller. The business-type-specific
+// keys (Restaurant / Painting Shop) are harmless to grant on a store of the
+// wrong type - the controllers themselves are gated separately by
+// [RequireRestaurant] / [RequirePaintingShop].
 public static class ModuleKeys
 {
     public const string Pos = "POS";
@@ -24,10 +25,17 @@ public static class ModuleKeys
     public const string Orders = "Orders";
     public const string Waiters = "Waiters";
 
+    // Painting Shop module
+    public const string Shades = "Shades";
+    public const string Quotations = "Quotations";
+
+
+
     public static readonly string[] All =
     {
         Pos, Items, Categories, Customers, Vendors, Purchases, Stock, ItemPrices, Reports, Accounts,
-        Tables, Reservations, Orders, Waiters
+        Tables, Reservations, Orders, Waiters,
+        Shades, Quotations
     };
 
     public static readonly Dictionary<string, string> DisplayNames = new()
@@ -45,6 +53,8 @@ public static class ModuleKeys
         [Tables] = "Tables (Restaurant)",
         [Reservations] = "Reservations (Restaurant)",
         [Orders] = "Orders / KOT (Restaurant)",
-        [Waiters] = "Waiters (Restaurant)"
+        [Waiters] = "Waiters (Restaurant)",
+        [Shades] = "Shade / Color Master (Painting Shop)",
+        [Quotations] = "Quotations (Painting Shop)"
     };
 }

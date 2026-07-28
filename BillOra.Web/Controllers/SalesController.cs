@@ -87,6 +87,28 @@ public class SalesController : Controller
         return RedirectToAction(nameof(Details), new { id });
     }
 
+  [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SendWhatsApp(int id, [FromServices] IWhatsAppService whatsAppService)
+    {
+        var sale = await _db.Sales.Include(s => s.Customer).FirstOrDefaultAsync(s => s.Id == id);
+        if (sale == null) return NotFound();
+
+        if (string.IsNullOrWhiteSpace(sale.Customer?.Phone))
+        {
+            TempData["Error"] = "This customer has no phone number on file.";
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
+        var (success, error) = await whatsAppService.SendInvoiceAsync(sale.StoreId, sale.Id);
+        TempData[success ? "Success" : "Error"] = success
+            ? $"Invoice sent to {sale.Customer.Name} on WhatsApp."
+            : $"Could not send via WhatsApp: {error}";
+
+        return RedirectToAction(nameof(Details), new { id });
+    }
+
+
     [HttpGet]
     [Authorize(Roles = Roles.StoreAdmin)]
     public async Task<IActionResult> Edit(int id)

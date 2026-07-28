@@ -1,0 +1,91 @@
+@model List<ShadeColor>
+@{
+    ViewData["Title"] = "Shade / Color Master";
+    var items = (List<Item>)ViewBag.Items;
+    int? selectedItemId = ViewBag.SelectedItemId;
+}
+
+<h3 class="mb-4">Shade / Color Master</h3>
+
+@if (TempData["Success"] != null) { <div class="alert alert-success py-2">@TempData["Success"]</div> }
+@if (TempData["Error"] != null) { <div class="alert alert-danger py-2">@TempData["Error"]</div> }
+
+<div class="bo-card mb-3">
+    <form method="get" class="row g-2">
+        <div class="col-md-4">
+            <label class="form-label small">Paint Product</label>
+            <select name="itemId" class="form-select" onchange="this.form.submit()">
+                <option value="">-- all products --</option>
+                @foreach (var i in items)
+                {
+                    <option value="@i.Id" selected="@(selectedItemId == i.Id)">@i.Name</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label small">Search</label>
+            <input name="search" value="@ViewBag.Search" class="form-control" placeholder="Shade name or code" />
+        </div>
+        <div class="col-md-2 d-flex align-items-end"><button class="btn btn-outline-secondary w-100">Search</button></div>
+    </form>
+</div>
+
+<div class="bo-card mb-4">
+    <h5 class="mb-3">Add Shade</h5>
+    <form asp-action="Create" method="post" class="row g-2">
+        <div class="col-md-3">
+            <label class="form-label small">Paint Product</label>
+            <select name="itemId" class="form-select" required>
+                @foreach (var i in items)
+                {
+                    <option value="@i.Id" selected="@(selectedItemId == i.Id)">@i.Name</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-2"><label class="form-label small">Shade Code</label><input name="shadeCode" class="form-control" placeholder="e.g. RAL-3020" required /></div>
+        <div class="col-md-3"><label class="form-label small">Shade Name</label><input name="shadeName" class="form-control" placeholder="e.g. Sunset Coral" required /></div>
+        <div class="col-md-2">
+            <label class="form-label small">Base Type</label>
+            <select name="baseType" class="form-select">
+                <option>White Base</option><option>Pastel Base</option><option>Medium Base</option><option>Deep Base</option>
+            </select>
+        </div>
+        <div class="col-md-2"><label class="form-label small">Swatch Color</label><input name="hexColor" type="color" value="#e8b4b8" class="form-control form-control-color w-100" /></div>
+        <div class="col-md-8"><label class="form-label small">Color Formula (tint machine recipe)</label><input name="colorFormula" class="form-control" placeholder="e.g. R:2.5 Y:6.0 B:0.5 Bk:0.2 (ml per liter)" /></div>
+        <div class="col-md-2 d-flex align-items-end">
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="isCustomShade" value="true" id="customShade" />
+                <label class="form-check-label" for="customShade">Custom Shade</label>
+            </div>
+        </div>
+        <div class="col-md-2 d-flex align-items-end"><button class="btn btn-primary w-100"><i class="fa-solid fa-plus"></i> Add Shade</button></div>
+    </form>
+</div>
+
+<div class="bo-card">
+    <table class="table align-middle">
+        <thead><tr><th></th><th>Code</th><th>Shade Name</th><th>Product</th><th>Base</th><th>Custom</th><th>Status</th><th class="text-end">Actions</th></tr></thead>
+        <tbody>
+        @foreach (var s in Model)
+        {
+            <tr>
+                <td><span style="display:inline-block;width:24px;height:24px;border-radius:5px;background:@(s.HexColor ?? "#ccc");border:1px solid #ddd;"></span></td>
+                <td>@s.ShadeCode</td>
+                <td>@s.ShadeName</td>
+                <td>@s.Item?.Name</td>
+                <td>@s.BaseType</td>
+                <td>@(s.IsCustomShade ? "Yes" : "")</td>
+                <td>
+                    @if (s.IsActive) { <span class="badge bg-success">Active</span> }
+                    else { <span class="badge bg-secondary">Retired</span> }
+                </td>
+                <td class="text-end">
+                    <form asp-action="ToggleActive" asp-route-id="@s.Id" asp-route-itemId="@selectedItemId" method="post" class="d-inline">
+                        <button class="btn btn-sm btn-outline-secondary">Toggle</button>
+                    </form>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>

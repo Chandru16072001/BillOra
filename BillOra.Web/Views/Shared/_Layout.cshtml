@@ -77,10 +77,23 @@
                                     <li><a class="dropdown-item" href="/Staff">Staff</a></li>
                                     <li><a class="dropdown-item" href="/Store">Store Information</a></li>
                                     <li><a class="dropdown-item" href="/InvoiceConfig">Invoice Configuration</a></li>
+                                   <li><a class="dropdown-item" href="/WhatsAppSettings">WhatsApp Settings</a></li>
                                     <li><a class="dropdown-item" href="/Settings">Settings</a></li>
                                 </ul>
                             </li>
                         }
+
+@if (User.FindFirst("BusinessType")?.Value == "Painting Shop")
+{
+    <li class="nav-item dropdown">
+        <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">Painting Shop</a>
+        <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="/Shades">Shade / Color Master</a></li>
+            <li><a class="dropdown-item" href="/Quotations">Quotations</a></li>
+        </ul>
+    </li>
+}
+
 
 @if (User.FindFirst("BusinessType")?.Value == "Restaurant")
 {

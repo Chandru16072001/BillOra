@@ -149,6 +149,7 @@ public class ItemsController : Controller
     {
         var store = await _db.Stores.FindAsync(_tenant.StoreId ?? 0);
         ViewBag.GstEnabled = store?.GstEnabled ?? true;
+ViewBag.IsPaintingShop = store?.IsPaintingShop ?? false;
         ViewBag.Categories = await _db.Categories.OrderBy(c => c.Name).ToListAsync();
         ViewBag.Units = await _db.Units.OrderBy(u => u.Name).ToListAsync();
     }

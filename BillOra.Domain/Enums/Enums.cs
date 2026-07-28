@@ -86,3 +86,23 @@ public enum RestaurantOrderStatus
     Billed,      // converted to a Sale
     Cancelled
 }
+
+// ---------- Painting Shop module (only active when Store.BusinessType == "Painting Shop") ----------
+
+public enum QuotationStatus
+{
+    Draft,
+    Sent,
+    Approved,
+    Rejected,
+    Expired,
+    Converted // billed into a Sale
+}
+
+public enum CustomerType
+{
+    WalkIn,
+    Regular,
+    Contractor,
+    Builder
+}

@@ -11,6 +11,8 @@ AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 
 var builder = WebApplication.CreateBuilder(args);
 
+
+
 // ---- Database (Sqlite / PostgreSQL / SQL Server) ----
 var provider = builder.Configuration["DatabaseProvider"] ?? "Sqlite";
 
@@ -63,6 +65,8 @@ builder.Services.AddScoped<IActivityLogger, ActivityLogger>();
 builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
 builder.Services.AddScoped<IAccountingService, AccountingService>();
 builder.Services.AddScoped<IBatchStockService, BatchStockService>();
+builder.Services.AddHttpClient(); // enables IHttpClientFactory, used by WhatsAppCloudApiService
+builder.Services.AddScoped<IWhatsAppService, WhatsAppCloudApiService>();
 builder.Services.AddDataProtection();
 
 builder.Services.AddControllersWithViews()
@@ -77,9 +81,6 @@ builder.Services.AddControllersWithViews()
 
 var conn = builder.Configuration.GetConnectionString("PostgresConnection");
 
-Console.WriteLine("====================================");
-Console.WriteLine(conn);
-Console.WriteLine("====================================");
 
 var app = builder.Build();
 

@@ -1,0 +1,120 @@
+@using BillOra.Domain.Enums
+@model Quotation
+@{
+    ViewData["Title"] = "Quotation " + Model.QuotationNumber;
+    var paymentModes = (IEnumerable<PaymentMode>)ViewBag.PaymentModes;
+    bool canConvert = Model.Status != QuotationStatus.Converted && (!Model.DiscountRequiresApproval || Model.DiscountApproved);
+}
+@Html.AntiForgeryToken()
+
+@if (TempData["Success"] != null) { <div class="alert alert-success py-2">@TempData["Success"]</div> }
+@if (TempData["Error"] != null) { <div class="alert alert-danger py-2">@TempData["Error"]</div> }
+
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <div>
+        <h3 class="mb-0">Quotation @Model.QuotationNumber</h3>
+        <div class="text-muted small">@(Model.Customer?.Name ?? "Walk-in") — @Model.QuotationDate.ToLocalTime().ToString("dd MMM yyyy")</div>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+        <a class="btn btn-outline-secondary" href="/Quotations/Print/@Model.Id" target="_blank"><i class="fa-solid fa-print"></i> Print</a>
+        <form asp-action="Email" asp-route-id="@Model.Id" method="post" class="d-inline">
+            <button class="btn btn-outline-secondary"><i class="fa-solid fa-envelope"></i> Email</button>
+        </form>
+    </div>
+</div>
+
+@if (Model.Status == QuotationStatus.Converted)
+{
+    <div class="bo-card mb-3">This quotation was converted to a sale. <a href="/Sales/Details/@Model.ConvertedSaleId">View Invoice</a></div>
+}
+else if (Model.DiscountRequiresApproval && !Model.DiscountApproved)
+{
+    <div class="bo-card mb-3 border-danger">
+        <p class="mb-2"><i class="fa-solid fa-triangle-exclamation text-danger"></i> This quotation's discount exceeds the store's approval threshold and needs Admin sign-off before it can be billed.</p>
+        @if (User.IsInRole("StoreAdmin"))
+        {
+            <form asp-action="ApproveDiscount" asp-route-id="@Model.Id" method="post" class="d-inline">
+                <button class="btn btn-success btn-sm">Approve Discount</button>
+            </form>
+        }
+        <form asp-action="Reject" asp-route-id="@Model.Id" method="post" class="d-inline">
+            <button class="btn btn-outline-danger btn-sm">Reject Quotation</button>
+        </form>
+    </div>
+}
+
+<div class="bo-card mb-3">
+    <table class="table">
+        <thead><tr><th>Item / Shade</th><th>Room</th><th class="text-end">Qty (L)</th><th class="text-end">Unit Price</th><th class="text-end">Discount</th><th class="text-end">Line Total</th></tr></thead>
+        <tbody>
+        @foreach (var line in Model.Items)
+        {
+            <tr>
+                <td>
+                    @line.Item?.Name
+                    @if (line.ShadeColor != null)
+                    {
+                        <span class="badge bg-light text-dark ms-1">@line.ShadeColor.ShadeName</span>
+                    }
+                </td>
+                <td class="text-muted small">
+                    @line.RoomName
+                    @if (line.WallPerimeterFt.HasValue)
+                    {
+                        <div>@line.WallPerimeterFt ft perimeter × @line.WallHeightFt ft, @line.Coats coats</div>
+                    }
+                </td>
+                <td class="text-end">@line.Quantity</td>
+                <td class="text-end">₹@line.UnitPrice.ToString("N2")</td>
+                <td class="text-end">₹@line.Discount.ToString("N2")</td>
+                <td class="text-end">₹@line.LineTotal.ToString("N2")</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+    <div class="text-end">
+        <p>Subtotal: ₹@Model.SubTotal.ToString("N2")</p>
+        <p>Discount: ₹@Model.DiscountAmount.ToString("N2")</p>
+        <p>Tax: ₹@Model.TaxAmount.ToString("N2")</p>
+        <h5>Grand Total: ₹@Model.GrandTotal.ToString("N2")</h5>
+    </div>
+</div>
+
+@if (canConvert)
+{
+    <div class="bo-card">
+        <h5 class="mb-2">Convert to Bill</h5>
+        <div class="row g-2 mb-2">
+            <div class="col-md-4">
+                <label class="form-label small">Payment Mode</label>
+                <select id="paymentMode" class="form-select form-select-sm">
+                    @foreach (var p in paymentModes)
+                    {
+                        <option value="@p.Id">@p.Name</option>
+                    }
+                </select>
+            </div>
+        </div>
+        <button class="btn btn-primary" onclick="convertToSale()"><i class="fa-solid fa-receipt"></i> Generate Bill</button>
+    </div>
+}
+
+@section Scripts {
+<script>
+async function convertToSale() {
+    const payload = { paymentModeId: document.getElementById('paymentMode').value || null };
+    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+    const res = await fetch('/Quotations/ConvertToSale/@Model.Id', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token || '' },
+        body: JSON.stringify(payload)
+    });
+    if (res.ok) {
+        const result = await res.json();
+        window.location.href = '/POS/Print/' + result.saleId;
+    } else {
+        alert('Could not generate the bill. ' + (await res.text()));
+    }
+}
+</script>
+}

@@ -27,6 +27,11 @@ public class BillOraDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<Brand> Brands => Set<Brand>();
     public DbSet<UnitOfMeasure> Units => Set<UnitOfMeasure>();
     public DbSet<Item> Items => Set<Item>();
+public DbSet<ShadeColor> ShadeColors => Set<ShadeColor>();
+
+public DbSet<Quotation> Quotations => Set<Quotation>();
+
+public DbSet<QuotationItem> QuotationItems => Set<QuotationItem>();
     public DbSet<ItemPrice> ItemPrices => Set<ItemPrice>();
     public DbSet<Customer> Customers => Set<Customer>();
     public DbSet<Vendor> Vendors => Set<Vendor>();
@@ -55,6 +60,9 @@ public class BillOraDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<Waiter> Waiters => Set<Waiter>();
     public DbSet<RestaurantOrder> RestaurantOrders => Set<RestaurantOrder>();
     public DbSet<RestaurantOrderItem> RestaurantOrderItems => Set<RestaurantOrderItem>();
+
+   public DbSet<WhatsAppSettings> WhatsAppSettingsEntries => Set<WhatsAppSettings>();
+    public DbSet<WhatsAppMessageLog> WhatsAppMessageLogs => Set<WhatsAppMessageLog>();
 
 
 protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
@@ -93,7 +101,11 @@ protected override void ConfigureConventions(ModelConfigurationBuilder configura
         builder.Entity<Item>().HasQueryFilter(e => !e.IsDeleted && (_tenant == null || _tenant.IsDeveloper || e.StoreId == _tenant.StoreId));
         builder.Entity<ItemPrice>().HasQueryFilter(e => !e.IsDeleted && (_tenant == null || _tenant.IsDeveloper || e.StoreId == _tenant.StoreId));
         builder.Entity<Customer>().HasQueryFilter(e => !e.IsDeleted && (_tenant == null || _tenant.IsDeveloper || e.StoreId == _tenant.StoreId));
-        builder.Entity<Vendor>().HasQueryFilter(e => !e.IsDeleted && (_tenant == null || _tenant.IsDeveloper || e.StoreId == _tenant.StoreId));
+       
+ builder.Entity<ShadeColor>().HasQueryFilter(e => !e.IsDeleted && (_tenant == null || _tenant.IsDeveloper || e.StoreId == _tenant.StoreId));
+        builder.Entity<Quotation>().HasQueryFilter(e => !e.IsDeleted && (_tenant == null || _tenant.IsDeveloper || e.StoreId == _tenant.StoreId));
+
+ builder.Entity<Vendor>().HasQueryFilter(e => !e.IsDeleted && (_tenant == null || _tenant.IsDeveloper || e.StoreId == _tenant.StoreId));
         builder.Entity<PaymentMode>().HasQueryFilter(e => !e.IsDeleted && (_tenant == null || _tenant.IsDeveloper || e.StoreId == _tenant.StoreId));
         builder.Entity<Tax>().HasQueryFilter(e => !e.IsDeleted && (_tenant == null || _tenant.IsDeveloper || e.StoreId == _tenant.StoreId));
         builder.Entity<Sale>().HasQueryFilter(e => !e.IsDeleted && (_tenant == null || _tenant.IsDeveloper || e.StoreId == _tenant.StoreId));
@@ -112,6 +124,9 @@ protected override void ConfigureConventions(ModelConfigurationBuilder configura
         builder.Entity<TableReservation>().HasQueryFilter(e => !e.IsDeleted && (_tenant == null || _tenant.IsDeveloper || e.StoreId == _tenant.StoreId));
         builder.Entity<Waiter>().HasQueryFilter(e => !e.IsDeleted && (_tenant == null || _tenant.IsDeveloper || e.StoreId == _tenant.StoreId));
         builder.Entity<RestaurantOrder>().HasQueryFilter(e => !e.IsDeleted && (_tenant == null || _tenant.IsDeveloper || e.StoreId == _tenant.StoreId));
+   builder.Entity<WhatsAppSettings>().HasQueryFilter(e => !e.IsDeleted && (_tenant == null || _tenant.IsDeveloper || e.StoreId == _tenant.StoreId));
+        builder.Entity<WhatsAppMessageLog>().HasQueryFilter(e => !e.IsDeleted && (_tenant == null || _tenant.IsDeveloper || e.StoreId == _tenant.StoreId));
+
 
         // ---- Relationships that would otherwise cascade-delete across tenants ----
         builder.Entity<Sale>()
@@ -169,6 +184,7 @@ protected override void ConfigureConventions(ModelConfigurationBuilder configura
             .OnDelete(DeleteBehavior.Cascade);
 
  builder.Entity<Store>().Ignore(s => s.IsRestaurant);
+builder.Entity<Store>().Ignore(s => s.IsPaintingShop);
 
         builder.Entity<SaleItem>()
             .HasOne(si => si.Sale)
@@ -267,5 +283,46 @@ protected override void ConfigureConventions(ModelConfigurationBuilder configura
 
         builder.Entity<DiningTable>().HasIndex(t => new { t.StoreId, t.TableNumber }).IsUnique();
         builder.Entity<RestaurantOrder>().HasIndex(o => new { o.StoreId, o.OrderNumber }).IsUnique();
+
+
+// ---- Painting Shop module relationships ----
+        builder.Entity<ShadeColor>()
+            .HasOne(s => s.Item)
+            .WithMany()
+            .HasForeignKey(s => s.ItemId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Entity<Quotation>()
+            .HasOne(q => q.Customer)
+            .WithMany()
+            .HasForeignKey(q => q.CustomerId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Entity<QuotationItem>()
+            .HasOne(qi => qi.Quotation)
+            .WithMany(q => q.Items)
+            .HasForeignKey(qi => qi.QuotationId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Entity<QuotationItem>()
+            .HasOne(qi => qi.Item)
+            .WithMany()
+            .HasForeignKey(qi => qi.ItemId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Entity<QuotationItem>()
+            .HasOne(qi => qi.ShadeColor)
+            .WithMany()
+            .HasForeignKey(qi => qi.ShadeColorId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Entity<ShadeColor>().HasIndex(s => new { s.StoreId, s.ItemId, s.ShadeCode });
+        builder.Entity<Quotation>().HasIndex(q => new { q.StoreId, q.QuotationNumber }).IsUnique();
+
+ builder.Entity<WhatsAppMessageLog>()
+            .HasOne(l => l.Sale)
+            .WithMany()
+            .HasForeignKey(l => l.SaleId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

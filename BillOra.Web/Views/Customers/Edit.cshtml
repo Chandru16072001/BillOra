@@ -23,6 +23,12 @@
                 <label class="form-label">GST Number</label>
                 <input asp-for="GstNumber" class="form-control" />
             </div>
+ <div class="col-md-4"> <select name="CustomerType" class="form-control">
+                    <option value="WalkIn">Walk-in</option>
+                    <option value="Regular" selected>Regular</option>
+                    <option value="Contractor">Contractor</option>
+                    <option value="Builder">Builder</option>
+                </select></div>
             <div class="col-md-4">
                 <label class="form-label">Credit Limit</label>
                 <input asp-for="CreditLimit" type="number" step="0.01" class="form-control" />

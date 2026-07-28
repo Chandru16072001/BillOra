@@ -1,0 +1,57 @@
+@using BillOra.Domain.Enums
+@model List<Quotation>
+@{ ViewData["Title"] = "Quotations"; }
+
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h3 class="mb-0">Quotations</h3>
+    <a class="btn btn-primary btn-sm" href="/Quotations/Create"><i class="fa-solid fa-plus"></i> New Quotation</a>
+</div>
+
+<div class="bo-card mb-3">
+    <form method="get" class="row g-2">
+        <div class="col-md-4"><input name="customer" value="@ViewBag.Customer" class="form-control" placeholder="Customer name" /></div>
+        <div class="col-md-4">
+            <select name="status" class="form-select">
+                <option value="">All statuses</option>
+                @foreach (var s in Enum.GetValues<QuotationStatus>())
+                {
+                    <option value="@s" selected="@(ViewBag.Status == s.ToString())">@s</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-2"><button class="btn btn-outline-secondary w-100">Search</button></div>
+    </form>
+</div>
+
+<div class="bo-card">
+    <table class="table align-middle">
+        <thead><tr><th>Quotation #</th><th>Customer</th><th>Date</th><th>Status</th><th class="text-end">Total</th><th class="text-end">Actions</th></tr></thead>
+        <tbody>
+        @foreach (var q in Model)
+        {
+            var badgeClass = q.Status switch
+            {
+                QuotationStatus.Converted => "bg-success",
+                QuotationStatus.Approved => "bg-info text-dark",
+                QuotationStatus.Rejected => "bg-danger",
+                QuotationStatus.Expired => "bg-secondary",
+                _ => "bg-warning text-dark"
+            };
+            <tr>
+                <td>@q.QuotationNumber</td>
+                <td>@(q.Customer?.Name ?? "Walk-in")</td>
+                <td>@q.QuotationDate.ToLocalTime().ToString("dd MMM yyyy")</td>
+                <td>
+                    <span class="badge @badgeClass">@q.Status</span>
+                    @if (q.DiscountRequiresApproval && !q.DiscountApproved)
+                    {
+                        <span class="badge bg-danger">Needs Approval</span>
+                    }
+                </td>
+                <td class="text-end">₹@q.GrandTotal.ToString("N2")</td>
+                <td class="text-end"><a class="btn btn-sm btn-outline-secondary" href="/Quotations/Details/@q.Id">View</a></td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>
