@@ -5,6 +5,10 @@
     int batch = ViewBag.Batch;
     var batchItems = Model.Items.Where(i => i.KotBatch == batch).ToList();
 }
+@inject BillOra.Application.Common.Interfaces.IBrandingService BrandingService
+@{
+    var branding = await BrandingService.GetAsync();
+}
 <!DOCTYPE html>
 <html>
 <head>
@@ -50,6 +54,9 @@
         }
         </tbody>
     </table>
+<p style="text-align:center; font-size:10px; color:#999; margin-top:10px;">
+    Powered by @branding.SoftwareName
+</p>
     <hr />
 </body>
 </html>

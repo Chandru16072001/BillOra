@@ -68,6 +68,8 @@ builder.Services.AddScoped<IBatchStockService, BatchStockService>();
 builder.Services.AddHttpClient(); // enables IHttpClientFactory, used by WhatsAppCloudApiService
 builder.Services.AddScoped<IWhatsAppService, WhatsAppCloudApiService>();
 builder.Services.AddDataProtection();
+builder.Services.AddMemoryCache();
+builder.Services.AddScoped<IBrandingService, BrandingService>();
 
 builder.Services.AddControllersWithViews()
     .AddJsonOptions(options =>

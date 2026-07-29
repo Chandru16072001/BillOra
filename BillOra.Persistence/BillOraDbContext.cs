@@ -64,6 +64,8 @@ public DbSet<QuotationItem> QuotationItems => Set<QuotationItem>();
    public DbSet<WhatsAppSettings> WhatsAppSettingsEntries => Set<WhatsAppSettings>();
     public DbSet<WhatsAppMessageLog> WhatsAppMessageLogs => Set<WhatsAppMessageLog>();
 
+  // Global application branding (Developer-managed, not store-scoped)
+    public DbSet<AppBranding> AppBrandings => Set<AppBranding>();
 
 protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
 {

@@ -3,6 +3,10 @@
     Layout = null;
     var store = (Store)ViewBag.Store;
 }
+@inject BillOra.Application.Common.Interfaces.IBrandingService BrandingService
+@{
+    var branding = await BrandingService.GetAsync();
+}
 <!DOCTYPE html>
 <html>
 <head>
@@ -77,7 +81,10 @@
     }
 
     <p style="margin-top:20px; text-align:center; color:#666;">This is an estimate, not a tax invoice. Prices may change if not converted before the validity date.</p>
-    <div class="no-print" style="text-align:center; margin-top:10px;">
+<p style="text-align:center; font-size:10px; color:#999; margin-top:10px;">
+    Powered by @branding.SoftwareName
+</p>   
+ <div class="no-print" style="text-align:center; margin-top:10px;">
         <a href="/Quotations">Back to Quotations</a>
     </div>
 </body>

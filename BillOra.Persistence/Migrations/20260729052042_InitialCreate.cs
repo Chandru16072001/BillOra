@@ -62,6 +62,26 @@ namespace BillOra.Persistence.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "AppBrandings",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    SoftwareName = table.Column<string>(type: "text", nullable: false),
+                    LogoPath = table.Column<string>(type: "text", nullable: true),
+                    Tagline = table.Column<string>(type: "text", nullable: true),
+                    FaviconPath = table.Column<string>(type: "text", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AppBrandings", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "ApplicationSettings",
                 columns: table => new
                 {
@@ -1548,6 +1568,9 @@ namespace BillOra.Persistence.Migrations
 
             migrationBuilder.DropTable(
                 name: "ActivityLogs");
+
+            migrationBuilder.DropTable(
+                name: "AppBrandings");
 
             migrationBuilder.DropTable(
                 name: "ApplicationSettings");

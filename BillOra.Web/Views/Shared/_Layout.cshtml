@@ -1,3 +1,7 @@
+@inject BillOra.Application.Common.Interfaces.IBrandingService BrandingService
+@{
+    var branding = await BrandingService.GetAsync();
+}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,7 +11,11 @@
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <title>@ViewData["Title"] - BillOra</title>
+     <title>@ViewData["Title"] - @branding.SoftwareName</title>
+    @if (!string.IsNullOrEmpty(branding.FaviconPath))
+    {
+        <link rel="icon" href="@branding.FaviconPath" />
+    }
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.3.3/css/bootstrap.min.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
     <link rel="stylesheet" href="~/css/site.css" />
@@ -17,7 +25,17 @@
 {
     <nav class="navbar navbar-expand-lg navbar-dark" style="background:var(--bo-primary);">
         <div class="container-fluid">
-            <a class="navbar-brand" href="/"><i class="fa-solid fa-receipt"></i> BillOra</a>
+            <a class="navbar-brand d-flex align-items-center gap-2" href="/">
+                @if (!string.IsNullOrEmpty(branding.LogoPath))
+                {
+                    <img src="@branding.LogoPath" style="height:28px;" alt="@branding.SoftwareName" />
+                }
+                else
+                {
+                    <i class="fa-solid fa-receipt"></i>
+                }
+                @branding.SoftwareName
+            </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMain">
                 <span class="navbar-toggler-icon"></span>
             </button>
@@ -26,6 +44,7 @@
                     @if (User.IsInRole("Developer"))
                     {
                         <li class="nav-item"><a class="nav-link" href="/Developer">Companies</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/Branding">Branding</a></li>
                     }
                     else
                     {
@@ -127,5 +146,12 @@
 <!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 @await RenderSectionAsync("Scripts", required: false)
+<footer class="text-center text-muted small py-4">
+    @branding.SoftwareName
+    @if (!string.IsNullOrEmpty(branding.Tagline))
+    {
+        <text> — @branding.Tagline</text>
+    }
+</footer>
 </body>
 </html>

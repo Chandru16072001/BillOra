@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace BillOra.Persistence.Migrations
 {
     [DbContext(typeof(BillOraDbContext))]
-    [Migration("20260728074510_InitialCreate")]
+    [Migration("20260729052042_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -129,6 +129,44 @@ namespace BillOra.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("ActivityLogs");
+                });
+
+            modelBuilder.Entity("BillOra.Domain.Entities.AppBranding", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("FaviconPath")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("LogoPath")
+                        .HasColumnType("text");
+
+                    b.Property<string>("SoftwareName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Tagline")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("AppBrandings");
                 });
 
             modelBuilder.Entity("BillOra.Domain.Entities.ApplicationSetting", b =>

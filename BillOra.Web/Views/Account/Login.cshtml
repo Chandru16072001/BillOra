@@ -1,11 +1,30 @@
+@inject BillOra.Application.Common.Interfaces.IBrandingService BrandingService
+@{
+    var branding = await BrandingService.GetAsync();
+}
 @{
     ViewData["Title"] = "Login";
     Layout = "_Layout";
 }
 <div class="d-flex align-items-center justify-content-center" style="min-height:80vh;">
     <div class="bo-card" style="width:100%; max-width:380px;">
-        <h3 class="mb-1"><i class="fa-solid fa-receipt text-primary"></i> BillOra</h3>
+        <h3 class="mb-1 d-flex align-items-center gap-2">
+            @if (!string.IsNullOrEmpty(branding.LogoPath))
+            {
+                <img src="@branding.LogoPath" style="height:32px;" alt="@branding.SoftwareName" />
+            }
+            else
+            {
+                <i class="fa-solid fa-receipt text-primary"></i>
+            }
+            @branding.SoftwareName
+        </h3>
+        @if (!string.IsNullOrEmpty(branding.Tagline))
+        {
+            <p class="text-muted small mb-1">@branding.Tagline</p>
+        }
         <p class="text-muted mb-4">Sign in to continue</p>
+
 
         @if (!ViewData.ModelState.IsValid)
         {

@@ -3,6 +3,10 @@
     Layout = null;
     var store = (Store)ViewBag.Store;
 }
+@inject BillOra.Application.Common.Interfaces.IBrandingService BrandingService
+@{
+    var branding = await BrandingService.GetAsync();
+}
 <!DOCTYPE html>
 <html>
 <head>
@@ -39,5 +43,8 @@
     <h4>Total Refund: ₹@Model.RefundAmount.ToString("N2")</h4>
     <hr />
     <p style="text-align:center;">Load Stock: @(Model.LoadStock ? "Yes" : "No")</p>
+<p style="text-align:center; font-size:10px; color:#999; margin-top:10px;">
+    Powered by @branding.SoftwareName
+</p>
 </body>
 </html>

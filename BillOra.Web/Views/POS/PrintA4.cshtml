@@ -4,6 +4,10 @@
     var store = (Store)ViewBag.Store;
     var cfg = (InvoiceSettings)ViewBag.InvoiceSettings;
 }
+@inject BillOra.Application.Common.Interfaces.IBrandingService BrandingService
+@{
+    var branding = await BrandingService.GetAsync();
+}
 <!DOCTYPE html>
 <html>
 <head>
@@ -161,6 +165,9 @@
     {
         <p style="margin-top:20px; text-align:center; color:#666;">@cfg.FooterMessage</p>
     }
+<p style="text-align:center; font-size:10px; color:#999; margin-top:10px;">
+    Powered by @branding.SoftwareName
+</p>
     <div class="no-print" style="text-align:center; margin-top:10px;">
         <a href="/POS">Back to POS</a>
     </div>
