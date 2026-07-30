@@ -2,8 +2,8 @@
     ViewData["Title"] = "POS Billing";
     var items = (IEnumerable<Item>)ViewBag.Items;
     var paymentModes = (IEnumerable<PaymentMode>)ViewBag.PaymentModes;
-    var customers = (IEnumerable<Customer>)ViewBag.Customers;
     bool gstEnabled = ViewBag.GstEnabled;
+    int heldBillCount = ViewBag.HeldBillCount;
 }
 
 @Html.AntiForgeryToken()
@@ -13,30 +13,47 @@
     <div class="tab-btn" id="tabCartBtn" onclick="switchTab('cart')"><i class="fa-solid fa-cart-shopping"></i> Cart <span class="tab-count" id="cartCountBadge">0</span></div>
 </div>
 
+<div class="d-flex justify-content-between align-items-center mb-2 d-none d-lg-flex">
+    <div class="text-muted small"><i class="fa-solid fa-keyboard"></i> Shortcuts: <kbd>F2</kbd> Search &nbsp; <kbd>F4</kbd> Held Bills &nbsp; <kbd>F9</kbd> Complete Sale &nbsp; <kbd>F10</kbd> Hold Bill &nbsp; <kbd>Esc</kbd> Close</div>
+    <button class="btn btn-outline-secondary btn-sm position-relative" onclick="openHeldBillsPanel()">
+        <i class="fa-solid fa-pause"></i> Held Bills
+        @if (heldBillCount > 0)
+        {
+            <span class="badge bg-danger rounded-pill ms-1" id="heldBillCountBadge">@heldBillCount</span>
+        }
+        else
+        {
+            <span class="badge bg-danger rounded-pill ms-1 d-none" id="heldBillCountBadge">0</span>
+        }
+    </button>
+</div>
+<button class="btn btn-outline-secondary btn-sm w-100 mb-2 d-lg-none" onclick="openHeldBillsPanel()">
+    <i class="fa-solid fa-pause"></i> Held Bills
+    <span class="badge bg-danger rounded-pill ms-1" id="heldBillCountBadgeMobile">@heldBillCount</span>
+</button>
+
 <div class="billing-shell">
     <div class="billing-pane active" id="billingItemsPane">
         <div class="bo-card mb-3">
-            <input id="itemSearch" class="form-control form-control-lg" placeholder="Search by name, code, or scan barcode..." autofocus />
+            <input id="itemSearch" class="form-control form-control-lg" placeholder="Search by name, code, or scan barcode... (F2)" autofocus autocomplete="off" />
+            <div class="text-muted small mt-1">Showing top-selling items — search finds anything in your full catalog instantly.</div>
         </div>
-        <div id="itemGrid" class="row g-2">
+        <div id="itemGrid" class="pos-item-grid">
             @foreach (var i in items)
             {
-                <div class="col-6 col-md-4 col-lg-3">
-                    <div class="pos-item-card" data-item-id="@i.Id"
-                         onclick="addToCart(@i.Id, '@i.Name.Replace("'", "\\'")', @i.SellingPrice.ToString(System.Globalization.CultureInfo.InvariantCulture), @i.GstPercent.ToString(System.Globalization.CultureInfo.InvariantCulture))">
-                        <span class="pos-item-in-cart-badge" style="display:none;">0</span>
-                        @if (!string.IsNullOrEmpty(i.ImagePath))
-                        {
-                            <img src="@i.ImagePath" class="pos-item-thumb" alt="@i.Name" />
-                        }
-                        else
-                        {
-                            <div class="pos-item-thumb pos-item-thumb-placeholder"><i class="fa-solid fa-image"></i></div>
-                        }
-                        <div class="fw-semibold">@i.Name</div>
-                        <div class="text-muted small">Stock: @i.CurrentStock</div>
-                        <div class="text-primary fw-bold">₹@i.SellingPrice.ToString("N2")</div>
-                    </div>
+                <div class="pos-item-card" data-item-id="@i.Id" data-barcode="@i.Barcode" data-code="@i.ItemCode"
+                     onclick="addToCart(@i.Id, '@i.Name.Replace("'", "\\'")', @i.SellingPrice.ToString(System.Globalization.CultureInfo.InvariantCulture), @i.GstPercent.ToString(System.Globalization.CultureInfo.InvariantCulture))">
+                    <span class="pos-item-in-cart-badge" style="display:none;">0</span>
+                    @if (!string.IsNullOrEmpty(i.ImagePath))
+                    {
+                        <img src="@i.ImagePath" class="pos-item-thumb" alt="@i.Name" />
+                    }
+                    else
+                    {
+                        <div class="pos-item-thumb pos-item-thumb-placeholder"><i class="fa-solid fa-image"></i></div>
+                    }
+                    <div class="pos-item-name">@i.Name</div>
+                    <div class="pos-item-price">₹@i.SellingPrice.ToString("N0")</div>
                 </div>
             }
         </div>
@@ -46,23 +63,25 @@
         <div class="bo-card">
             <h5 class="mb-3 d-none d-lg-block"><i class="fa-solid fa-cart-shopping"></i> Current Bill</h5>
 
-            <div class="mb-2">
+            <div class="mb-2 position-relative">
                 <label class="form-label small mb-1">Customer</label>
                 <div class="d-flex gap-1">
-                    <select id="customerSelect" class="form-select">
-                        <option value="">Walk-in Customer</option>
-                        @foreach (var c in customers)
-                        {
-                            <option value="@c.Id">@c.Name @(string.IsNullOrEmpty(c.Phone) ? "" : $"({c.Phone})")</option>
-                        }
-                    </select>
+                    <div class="flex-grow-1 position-relative">
+                        <input id="customerSearch" class="form-control" placeholder="Walk-in Customer — search by name or phone..." autocomplete="off"
+                               oninput="onCustomerSearchInput()" onfocus="onCustomerSearchInput()" />
+                        <div id="customerResults" class="customer-search-results" style="display:none;"></div>
+                    </div>
+                    <button class="btn btn-outline-secondary" type="button" id="clearCustomerBtn" style="display:none;" onclick="clearSelectedCustomer()" title="Clear selection">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
                     <button class="btn btn-outline-primary" type="button" data-bs-toggle="modal" data-bs-target="#newCustomerModal" title="Add new customer">
                         <i class="fa-solid fa-user-plus"></i>
                     </button>
                 </div>
+                <input type="hidden" id="customerId" value="" />
             </div>
 
-            <div id="cartLines" style="max-height:38vh; overflow-y:auto;">
+            <div id="cartLines" style="max-height:60vh; overflow-y:auto;">
                 <p class="text-muted small" id="emptyCartMsg">No items added yet. Switch to Items to start a bill.</p>
             </div>
 
@@ -85,26 +104,41 @@
                 <span>Total</span><span id="grandTotal">₹0.00</span>
             </div>
 
-            <div class="mb-2 mt-3">
-                <label class="form-label small mb-1">Payment Mode</label>
-                <select id="paymentMode" class="form-select">
-                    @foreach (var p in paymentModes)
-                    {
-                        <option value="@p.Id">@p.Name</option>
-                    }
-                </select>
+            <hr />
+
+            <!-- Payment: quick single-tap modes, Split Payment, or Credit Sale -->
+            <div class="mb-2">
+                <label class="form-label small mb-1">Payment</label>
+                <div class="d-flex gap-2 flex-wrap" id="quickPaymentButtons"></div>
             </div>
 
+            <div class="form-check form-switch mb-2">
+                <input class="form-check-input" type="checkbox" role="switch" id="splitPaymentToggle" onchange="toggleSplitPayment()" />
+                <label class="form-check-label small" for="splitPaymentToggle">Split Payment (multiple modes)</label>
+            </div>
+            <div id="splitPaymentPane" style="display:none;">
+                <div id="splitPaymentLines"></div>
+                <button class="btn btn-sm btn-outline-secondary mt-1" type="button" onclick="addSplitLine()"><i class="fa-solid fa-plus"></i> Add payment line</button>
+                <div class="d-flex justify-content-between small mt-2">
+                    <span>Total Entered</span><span id="splitPaymentTotal">₹0.00</span>
+                </div>
+            </div>
+
+            <div class="form-check form-switch mb-2 mt-2">
+                <input class="form-check-input" type="checkbox" role="switch" id="creditSaleToggle" onchange="toggleCreditSale()" />
+                <label class="form-check-label small" for="creditSaleToggle">Credit Sale (bill to customer's account)</label>
+            </div>
+            <p class="text-muted small d-none" id="creditNeedsCustomerMsg">Select a registered customer above to bill on credit — walk-in customers can't carry a balance.</p>
+
             <div class="d-grid gap-2 mt-3">
-                <button class="btn btn-primary btn-lg" onclick="checkout(false)"><i class="fa-solid fa-check"></i> Complete Sale</button>
-                <button class="btn btn-outline-secondary" onclick="checkout(true)"><i class="fa-solid fa-pause"></i> Hold Bill</button>
+                <button class="btn btn-primary btn-lg" onclick="checkout(false)"><i class="fa-solid fa-check"></i> Complete Sale (F9)</button>
+                <button class="btn btn-outline-secondary" onclick="checkout(true)"><i class="fa-solid fa-pause"></i> Hold Bill (F10)</button>
                 <button class="btn btn-outline-secondary d-lg-none" onclick="switchTab('items')"><i class="fa-solid fa-arrow-left"></i> Back to Items</button>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Sticky mobile summary bar - visible on the Items tab whenever the cart has something in it -->
 <div class="billing-sticky-footer" id="stickyFooter" onclick="switchTab('cart')">
     <div>
         <div class="fw-bold" id="stickyItemCount">0 items</div>
@@ -113,8 +147,22 @@
     <button class="btn btn-primary"><i class="fa-solid fa-cart-shopping"></i> View Cart</button>
 </div>
 
-<!-- Quick "Create Customer" popup -- lets the cashier add a walk-in as a
-     real customer record without leaving the billing screen (SRS 8). -->
+<!-- Held Bills panel -->
+<div class="modal fade" id="heldBillsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fa-solid fa-pause"></i> Held Bills</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="heldBillsList">
+                <p class="text-muted">Loading...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick "Create Customer" popup -->
 <div class="modal fade" id="newCustomerModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -148,7 +196,10 @@
 <script>
 let cart = [];
 let currentTab = 'items';
+let resumedFromHeldSaleId = null;
 const gstEnabled = @Html.Raw(gstEnabled.ToString().ToLower());
+const paymentModes = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(paymentModes.Select(p => new { id = p.Id, name = p.Name })));
+let selectedPaymentModeId = paymentModes.length > 0 ? paymentModes[0].id : null;
 
 // ---------- Mobile tab switching ----------
 function switchTab(tab) {
@@ -167,6 +218,182 @@ function updateStickyFooter() {
     footer.classList.toggle('visible', show);
 }
 window.addEventListener('resize', updateStickyFooter);
+
+// ---------- Quick payment buttons ----------
+function renderQuickPaymentButtons() {
+    const container = document.getElementById('quickPaymentButtons');
+    container.innerHTML = paymentModes.map(m => `
+        <button type="button" class="btn btn-sm ${m.id === selectedPaymentModeId ? 'btn-primary' : 'btn-outline-primary'}" onclick="selectPaymentMode(${m.id})">
+            ${paymentIcon(m.name)} ${m.name}
+        </button>`).join('');
+}
+function paymentIcon(name) {
+    const n = name.toLowerCase();
+    if (n.includes('cash')) return '<i class="fa-solid fa-money-bill-wave"></i>';
+    if (n.includes('card')) return '<i class="fa-solid fa-credit-card"></i>';
+    if (n.includes('upi')) return '<i class="fa-solid fa-mobile-screen-button"></i>';
+    return '<i class="fa-solid fa-wallet"></i>';
+}
+function selectPaymentMode(id) {
+    selectedPaymentModeId = id;
+    renderQuickPaymentButtons();
+}
+renderQuickPaymentButtons();
+
+// ---------- Split payment ----------
+let splitLines = [];
+function toggleSplitPayment() {
+    const enabled = document.getElementById('splitPaymentToggle').checked;
+    document.getElementById('splitPaymentPane').style.display = enabled ? 'block' : 'none';
+    document.getElementById('quickPaymentButtons').closest('.mb-2').style.display = enabled ? 'none' : 'block';
+    if (enabled && splitLines.length === 0) { addSplitLine(); addSplitLine(); }
+}
+function addSplitLine() {
+    splitLines.push({ paymentModeId: paymentModes[0]?.id || null, amount: 0 });
+    renderSplitLines();
+}
+function removeSplitLine(idx) { splitLines.splice(idx, 1); renderSplitLines(); }
+function updateSplitLine(idx, field, value) {
+    splitLines[idx][field] = field === 'amount' ? (parseFloat(value) || 0) : parseInt(value);
+    renderSplitLines();
+}
+function renderSplitLines() {
+    const container = document.getElementById('splitPaymentLines');
+    container.innerHTML = splitLines.map((line, idx) => `
+        <div class="d-flex gap-2 mb-2 align-items-center">
+            <select class="form-select form-select-sm" onchange="updateSplitLine(${idx}, 'paymentModeId', this.value)">
+                ${paymentModes.map(m => `<option value="${m.id}" ${m.id === line.paymentModeId ? 'selected' : ''}>${m.name}</option>`).join('')}
+            </select>
+            <input type="number" min="0" step="0.01" value="${line.amount}" class="form-control form-control-sm" style="width:110px" onchange="updateSplitLine(${idx}, 'amount', this.value)" />
+            <button class="btn btn-sm btn-link text-danger p-0" onclick="removeSplitLine(${idx})"><i class="fa-solid fa-xmark"></i></button>
+        </div>`).join('');
+    const total = splitLines.reduce((sum, l) => sum + l.amount, 0);
+    document.getElementById('splitPaymentTotal').innerText = '₹' + total.toFixed(2);
+}
+
+// ---------- Credit sale ----------
+function toggleCreditSale() {
+    const enabled = document.getElementById('creditSaleToggle').checked;
+    const customerId = document.getElementById('customerId').value;
+    if (enabled && !customerId) {
+        document.getElementById('creditNeedsCustomerMsg').classList.remove('d-none');
+        document.getElementById('creditSaleToggle').checked = false;
+        return;
+    }
+    document.getElementById('creditNeedsCustomerMsg').classList.add('d-none');
+    document.getElementById('quickPaymentButtons').closest('.mb-2').style.display = enabled ? 'none' : 'block';
+    document.getElementById('splitPaymentToggle').closest('.form-check').style.display = enabled ? 'none' : 'block';
+    if (enabled) { document.getElementById('splitPaymentToggle').checked = false; document.getElementById('splitPaymentPane').style.display = 'none'; }
+}
+// ---------- Customer search lookup (replaces the old dropdown) ----------
+let customerSearchDebounce = null;
+function onCustomerSearchInput() {
+    clearTimeout(customerSearchDebounce);
+    const term = document.getElementById('customerSearch').value.trim();
+    if (!term) { document.getElementById('customerResults').style.display = 'none'; return; }
+    customerSearchDebounce = setTimeout(() => runCustomerSearch(term), 150);
+}
+
+async function runCustomerSearch(term) {
+    const res = await fetch('/Customers/SearchCustomers?term=' + encodeURIComponent(term));
+    const results = await res.json();
+    const box = document.getElementById('customerResults');
+
+    if (results.length === 0) {
+        box.innerHTML = '<div class="customer-search-empty">No matching customers</div>';
+    } else {
+        box.innerHTML = results.map(c => `
+            <div class="customer-search-item" onclick="selectCustomer(${c.id}, '${c.name.replace("'", "\\'")}', '${c.phone || ''}')">
+                <div class="fw-semibold">${c.name}</div>
+                <div class="text-muted small">${c.phone || ''} ${c.outstandingAmount > 0 ? ' · Outstanding ₹' + c.outstandingAmount.toFixed(2) : ''}</div>
+            </div>`).join('');
+    }
+    box.style.display = 'block';
+}
+
+function selectCustomer(id, name, phone) {
+    document.getElementById('customerId').value = id;
+    document.getElementById('customerSearch').value = name + (phone ? ' (' + phone + ')' : '');
+    document.getElementById('customerResults').style.display = 'none';
+    document.getElementById('clearCustomerBtn').style.display = 'inline-block';
+}
+
+function clearSelectedCustomer() {
+    document.getElementById('customerId').value = '';
+    document.getElementById('customerSearch').value = '';
+    document.getElementById('clearCustomerBtn').style.display = 'none';
+    document.getElementById('creditSaleToggle').checked = false;
+    toggleCreditSale();
+}
+
+// Close the results dropdown when clicking elsewhere on the page.
+document.addEventListener('click', function (e) {
+    const box = document.getElementById('customerResults');
+    if (!e.target.closest('#customerSearch') && !e.target.closest('#customerResults')) {
+        box.style.display = 'none';
+    }
+});
+
+// ---------- Held bills ----------
+function openHeldBillsPanel() {
+    const modal = new bootstrap.Modal(document.getElementById('heldBillsModal'));
+    modal.show();
+    loadHeldBills();
+}
+async function loadHeldBills() {
+    const res = await fetch('/POS/GetHeldBills');
+    const bills = await res.json();
+    const container = document.getElementById('heldBillsList');
+    if (bills.length === 0) { container.innerHTML = '<p class="text-muted">No held bills right now.</p>'; return; }
+
+    container.innerHTML = bills.map(b => `
+        <div class="d-flex justify-content-between align-items-center border-bottom py-2">
+            <div>
+                <div class="fw-semibold">${b.invoiceNumber} — ${b.customerName}</div>
+                <div class="text-muted small">${b.itemCount} items · ₹${b.grandTotal.toFixed(2)} · held ${new Date(b.heldAt).toLocaleString()}</div>
+            </div>
+            <div class="d-flex gap-1">
+                <button class="btn btn-sm btn-primary" onclick="resumeHeldBill(${b.saleId})">Resume</button>
+                <button class="btn btn-sm btn-outline-danger" onclick="discardHeldBill(${b.saleId})">Discard</button>
+            </div>
+        </div>`).join('');
+}
+async function resumeHeldBill(saleId) {
+    const res = await fetch('/POS/ResumeHeldBill/' + saleId);
+    if (!res.ok) { alert('Could not load that bill.'); return; }
+    const detail = await res.json();
+
+    cart = detail.lines.map(l => ({ itemId: l.itemId, name: l.itemName, unitPrice: l.unitPrice, quantity: l.quantity, discount: l.discount, gstPercent: l.gstPercent }));
+    resumedFromHeldSaleId = detail.saleId;
+    document.getElementById('overallDiscount').value = detail.overallDiscount;
+    if (detail.customerId) {
+        document.getElementById('customerId').value = detail.customerId;
+        document.getElementById('customerSearch').value = 'Customer selected (resumed bill)';
+        document.getElementById('clearCustomerBtn').style.display = 'inline-block';
+    }
+
+    bootstrap.Modal.getInstance(document.getElementById('heldBillsModal'))?.hide();
+    renderCart();
+    syncItemCardBadges();
+    switchTab('cart');
+}
+async function discardHeldBill(saleId) {
+    if (!confirm('Discard this held bill? This cannot be undone.')) return;
+    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+    await fetch('/POS/DeleteHeldBill/' + saleId, { method: 'POST', headers: { 'RequestVerificationToken': token || '' } });
+    loadHeldBills();
+    updateHeldBillBadge(-1);
+}
+function updateHeldBillBadge(delta) {
+    ['heldBillCountBadge', 'heldBillCountBadgeMobile'].forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const current = parseInt(el.innerText) || 0;
+        const next = Math.max(0, current + delta);
+        el.innerText = next;
+        el.classList.toggle('d-none', next === 0);
+    });
+}
 
 // ---------- Cart ----------
 function addToCart(id, name, price, gstPercent) {
@@ -209,8 +436,6 @@ function toggleLineDetails(idx) {
     document.getElementById('lineDetails_' + idx)?.classList.toggle('expanded');
 }
 
-// Reflects current cart quantities as small badges on browsed item cards,
-// so it's obvious at a glance what's already been added while scanning more.
 function syncItemCardBadges() {
     document.querySelectorAll('.pos-item-card').forEach(card => {
         const id = parseInt(card.dataset.itemId);
@@ -245,30 +470,24 @@ function renderCart() {
         totalQty += line.quantity;
 
         html += `
-            <div class="pos-cart-line">
-                <div class="d-flex justify-content-between align-items-start">
-                    <span class="fw-semibold">${line.name}</span>
-                    <button class="btn btn-sm btn-link text-danger p-0" onclick="removeLine(${idx})"><i class="fa-solid fa-trash"></i></button>
+            <div class="pos-cart-row">
+                <button class="cart-row-remove" onclick="removeLine(${idx})" title="Remove"><i class="fa-solid fa-xmark"></i></button>
+                <div class="cart-row-name" title="${line.name}">${line.name}</div>
+                <div class="qty-stepper qty-stepper-xs">
+                    <button type="button" onclick="stepQty(${idx}, -1)">−</button>
+                    <input type="number" value="${line.quantity}" onchange="updateQty(${idx}, this.value)" />
+                    <button type="button" onclick="stepQty(${idx}, 1)">+</button>
                 </div>
-                <div class="d-flex justify-content-between align-items-center mt-2 flex-wrap gap-2">
-                    <div class="qty-stepper">
-                        <button type="button" onclick="stepQty(${idx}, -1)">−</button>
-                        <input type="number" value="${line.quantity}" onchange="updateQty(${idx}, this.value)" />
-                        <button type="button" onclick="stepQty(${idx}, 1)">+</button>
+                <div class="cart-row-total">₹${(lineBase + lineTax).toFixed(2)}</div>
+                <button class="cart-row-edit" onclick="toggleLineDetails(${idx})" title="Edit price / discount"><i class="fa-solid fa-sliders"></i></button>
+                <div class="billing-line-details cart-row-details" id="lineDetails_${idx}">
+                    <div class="flex-fill">
+                        <label class="text-muted d-block" style="font-size:10px;">Unit Price</label>
+                        <input type="number" min="0" step="0.01" value="${line.unitPrice}" class="form-control form-control-sm" onchange="updatePrice(${idx}, this.value)" />
                     </div>
-                    <span class="fw-bold">₹${(lineBase + lineTax).toFixed(2)}</span>
-                </div>
-                <div class="mt-1">
-                    <span class="billing-line-toggle" onclick="toggleLineDetails(${idx})"><i class="fa-solid fa-sliders"></i> Edit price / discount</span>
-                    <div class="billing-line-details gap-2 mt-2" id="lineDetails_${idx}">
-                        <div class="flex-fill">
-                            <label class="text-muted d-block" style="font-size:10px;">Unit Price</label>
-                            <input type="number" min="0" step="0.01" value="${line.unitPrice}" class="form-control form-control-sm" onchange="updatePrice(${idx}, this.value)" />
-                        </div>
-                        <div class="flex-fill">
-                            <label class="text-muted d-block" style="font-size:10px;">Line Discount</label>
-                            <input type="number" min="0" step="0.01" value="${line.discount}" class="form-control form-control-sm" onchange="updateDiscount(${idx}, this.value)" />
-                        </div>
+                    <div class="flex-fill">
+                        <label class="text-muted d-block" style="font-size:10px;">Line Discount</label>
+                        <input type="number" min="0" step="0.01" value="${line.discount}" class="form-control form-control-sm" onchange="updateDiscount(${idx}, this.value)" />
                     </div>
                 </div>
             </div>`;
@@ -290,9 +509,41 @@ function renderCart() {
     updateStickyFooter();
 }
 
-document.getElementById('itemSearch').addEventListener('input', async function () {
+// ---------- Search / barcode scanning ----------
+let searchDebounce = null;
+document.getElementById('itemSearch').addEventListener('input', function () {
+    clearTimeout(searchDebounce);
     const term = this.value;
     if (!term) return;
+    searchDebounce = setTimeout(() => runSearch(term), 150);
+});
+
+// Barcode scanners type fast and send Enter - an exact barcode/code match
+// is added immediately without waiting for a click, then the box clears
+// itself so the next scan can go straight in (continuous scanning).
+document.getElementById('itemSearch').addEventListener('keydown', async function (e) {
+    if (e.key !== 'Enter') return;
+    e.preventDefault();
+    const term = this.value.trim();
+    if (!term) return;
+
+    const res = await fetch('/POS/SearchItems?term=' + encodeURIComponent(term));
+    const results = await res.json();
+    const exact = results.find(i => i.exactMatch);
+    if (exact) {
+        addToCart(exact.id, exact.name, exact.sellingPrice, exact.gstPercent);
+        this.value = '';
+        document.getElementById('itemGrid').innerHTML = '';
+    } else if (results.length === 1) {
+        addToCart(results[0].id, results[0].name, results[0].sellingPrice, results[0].gstPercent);
+        this.value = '';
+        document.getElementById('itemGrid').innerHTML = '';
+    } else {
+        runSearch(term);
+    }
+});
+
+async function runSearch(term) {
     const res = await fetch('/POS/SearchItems?term=' + encodeURIComponent(term));
     const results = await res.json();
     const grid = document.getElementById('itemGrid');
@@ -302,17 +553,26 @@ document.getElementById('itemSearch').addEventListener('input', async function (
             ? `<img src="${i.imagePath}" class="pos-item-thumb" alt="${i.name}" />`
             : `<div class="pos-item-thumb pos-item-thumb-placeholder"><i class="fa-solid fa-image"></i></div>`;
         grid.innerHTML += `
-            <div class="col-6 col-md-4 col-lg-3">
-                <div class="pos-item-card" data-item-id="${i.id}" onclick="addToCart(${i.id}, '${i.name.replace("'", "\\'")}', ${i.sellingPrice}, ${i.gstPercent})">
-                    <span class="pos-item-in-cart-badge" style="display:none;">0</span>
-                    ${thumb}
-                    <div class="fw-semibold">${i.name}</div>
-                    <div class="text-muted small">Stock: ${i.currentStock}</div>
-                    <div class="text-primary fw-bold">₹${i.sellingPrice.toFixed(2)}</div>
-                </div>
+            <div class="pos-item-card" data-item-id="${i.id}" onclick="addToCart(${i.id}, '${i.name.replace("'", "\\'")}', ${i.sellingPrice}, ${i.gstPercent})">
+                <span class="pos-item-in-cart-badge" style="display:none;">0</span>
+                ${thumb}
+                <div class="pos-item-name">${i.name}</div>
+                <div class="pos-item-price">₹${i.sellingPrice.toFixed(0)}</div>
             </div>`;
     });
     syncItemCardBadges();
+}
+
+// ---------- Keyboard shortcuts ----------
+document.addEventListener('keydown', function (e) {
+    if (e.key === 'F2') { e.preventDefault(); document.getElementById('itemSearch').focus(); switchTab('items'); }
+    else if (e.key === 'F4') { e.preventDefault(); openHeldBillsPanel(); }
+    else if (e.key === 'F9') { e.preventDefault(); checkout(false); }
+    else if (e.key === 'F10') { e.preventDefault(); checkout(true); }
+    else if (e.key === 'Escape') {
+        bootstrap.Modal.getInstance(document.getElementById('heldBillsModal'))?.hide();
+        bootstrap.Modal.getInstance(document.getElementById('newCustomerModal'))?.hide();
+    }
 });
 
 function getAntiForgeryToken() {
@@ -337,12 +597,7 @@ async function createCustomer() {
 
     if (res.ok) {
         const customer = await res.json();
-        const select = document.getElementById('customerSelect');
-        const opt = document.createElement('option');
-        opt.value = customer.id;
-        opt.text = customer.name + (customer.phone ? ' (' + customer.phone + ')' : '');
-        select.appendChild(opt);
-        select.value = customer.id;
+        selectCustomer(customer.id, customer.name, customer.phone);
 
         document.getElementById('newCustName').value = '';
         document.getElementById('newCustPhone').value = '';
@@ -356,11 +611,28 @@ async function createCustomer() {
 async function checkout(hold) {
     if (cart.length === 0) { alert('Add at least one item.'); return; }
 
+    const isCredit = document.getElementById('creditSaleToggle').checked;
+    const isSplit = document.getElementById('splitPaymentToggle').checked;
+
+    let payments = [];
+    if (!hold) {
+        if (isCredit) {
+            payments = []; // nothing collected now - full amount becomes outstanding
+        } else if (isSplit) {
+            payments = splitLines.filter(l => l.amount > 0).map(l => ({ paymentModeId: l.paymentModeId, amount: l.amount }));
+            if (payments.length === 0) { alert('Enter at least one split payment amount.'); return; }
+        } else {
+            const grandTotalText = document.getElementById('grandTotal').innerText.replace(/[^\d.]/g, '');
+            payments = [{ paymentModeId: selectedPaymentModeId, amount: parseFloat(grandTotalText) || 0 }];
+        }
+    }
+
     const payload = {
-        customerId: document.getElementById('customerSelect').value || null,
-        paymentModeId: document.getElementById('paymentMode').value || null,
+        customerId: document.getElementById('customerId').value || null,
         overallDiscount: parseFloat(document.getElementById('overallDiscount').value) || 0,
-        lines: cart.map(l => ({ itemId: l.itemId, quantity: l.quantity, unitPrice: l.unitPrice, discount: l.discount }))
+        lines: cart.map(l => ({ itemId: l.itemId, quantity: l.quantity, unitPrice: l.unitPrice, discount: l.discount })),
+        payments: payments,
+        resumedFromHeldSaleId: resumedFromHeldSaleId
     };
 
     const res = await fetch('/POS/CreateSale?hold=' + hold, {
@@ -373,12 +645,13 @@ async function checkout(hold) {
         const result = await res.json();
         if (hold) {
             alert('Bill held as ' + result.invoiceNumber);
-            cart = []; renderCart(); syncItemCardBadges();
+            cart = []; resumedFromHeldSaleId = null; renderCart(); syncItemCardBadges();
+            updateHeldBillBadge(1);
         } else {
             window.location.href = '/POS/Print/' + result.saleId;
         }
     } else {
-        alert('Could not save the bill. Please try again.');
+        alert('Could not save the bill. ' + (await res.text()));
     }
 }
 </script>

@@ -732,6 +732,41 @@ namespace BillOra.Persistence.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "CustomerPayments",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    CustomerId = table.Column<int>(type: "integer", nullable: false),
+                    Amount = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
+                    PaymentDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    PaymentModeId = table.Column<int>(type: "integer", nullable: true),
+                    Notes = table.Column<string>(type: "text", nullable: true),
+                    ReceivedByUserId = table.Column<string>(type: "text", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
+                    StoreId = table.Column<int>(type: "integer", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_CustomerPayments", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_CustomerPayments_Customers_CustomerId",
+                        column: x => x.CustomerId,
+                        principalTable: "Customers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_CustomerPayments_PaymentModes_PaymentModeId",
+                        column: x => x.PaymentModeId,
+                        principalTable: "PaymentModes",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Sales",
                 columns: table => new
                 {
@@ -753,9 +788,11 @@ namespace BillOra.Persistence.Migrations
                     IsInterState = table.Column<bool>(type: "boolean", nullable: false),
                     PaymentModeId = table.Column<int>(type: "integer", nullable: true),
                     PaymentStatus = table.Column<int>(type: "integer", nullable: false),
+                    AmountPaid = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
                     Notes = table.Column<string>(type: "text", nullable: true),
                     IsHeld = table.Column<bool>(type: "boolean", nullable: false),
                     IsReturned = table.Column<bool>(type: "boolean", nullable: false),
+                    PrintCount = table.Column<int>(type: "integer", nullable: false),
                     TableNumber = table.Column<string>(type: "text", nullable: true),
                     WaiterName = table.Column<string>(type: "text", nullable: true),
                     OrderNumber = table.Column<string>(type: "text", nullable: true),
@@ -915,6 +952,33 @@ namespace BillOra.Persistence.Migrations
                         principalTable: "Units",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "SalePayments",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    SaleId = table.Column<int>(type: "integer", nullable: false),
+                    PaymentModeId = table.Column<int>(type: "integer", nullable: true),
+                    Amount = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_SalePayments", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_SalePayments_PaymentModes_PaymentModeId",
+                        column: x => x.PaymentModeId,
+                        principalTable: "PaymentModes",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_SalePayments_Sales_SaleId",
+                        column: x => x.SaleId,
+                        principalTable: "Sales",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -1345,6 +1409,16 @@ namespace BillOra.Persistence.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_CustomerPayments_CustomerId",
+                table: "CustomerPayments",
+                column: "CustomerId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_CustomerPayments_PaymentModeId",
+                table: "CustomerPayments",
+                column: "PaymentModeId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_DiningTables_StoreId_TableNumber",
                 table: "DiningTables",
                 columns: new[] { "StoreId", "TableNumber" },
@@ -1473,6 +1547,16 @@ namespace BillOra.Persistence.Migrations
                 column: "SaleId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_SalePayments_PaymentModeId",
+                table: "SalePayments",
+                column: "PaymentModeId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_SalePayments_SaleId",
+                table: "SalePayments",
+                column: "SaleId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Sales_CustomerId",
                 table: "Sales",
                 column: "CustomerId");
@@ -1591,6 +1675,9 @@ namespace BillOra.Persistence.Migrations
                 name: "AspNetUserTokens");
 
             migrationBuilder.DropTable(
+                name: "CustomerPayments");
+
+            migrationBuilder.DropTable(
                 name: "EmailSettingsEntries");
 
             migrationBuilder.DropTable(
@@ -1613,6 +1700,9 @@ namespace BillOra.Persistence.Migrations
 
             migrationBuilder.DropTable(
                 name: "RestaurantOrderItems");
+
+            migrationBuilder.DropTable(
+                name: "SalePayments");
 
             migrationBuilder.DropTable(
                 name: "SalesReturnItems");

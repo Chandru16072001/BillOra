@@ -409,6 +409,57 @@ namespace BillOra.Persistence.Migrations
                     b.ToTable("Customers");
                 });
 
+            modelBuilder.Entity("BillOra.Domain.Entities.CustomerPayment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("CustomerId")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("PaymentDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("PaymentModeId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ReceivedByUserId")
+                        .HasColumnType("text");
+
+                    b.Property<int>("StoreId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CustomerId");
+
+                    b.HasIndex("PaymentModeId");
+
+                    b.ToTable("CustomerPayments");
+                });
+
             modelBuilder.Entity("BillOra.Domain.Entities.DiningTable", b =>
                 {
                     b.Property<int>("Id")
@@ -1268,6 +1319,10 @@ namespace BillOra.Persistence.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<decimal>("AmountPaid")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
                     b.Property<string>("CashierUserId")
                         .IsRequired()
                         .HasColumnType("text");
@@ -1326,6 +1381,9 @@ namespace BillOra.Persistence.Migrations
                         .HasColumnType("integer");
 
                     b.Property<int>("PaymentStatus")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("PrintCount")
                         .HasColumnType("integer");
 
                     b.Property<decimal>("RoundOff")
@@ -1442,6 +1500,33 @@ namespace BillOra.Persistence.Migrations
                     b.HasIndex("SaleId");
 
                     b.ToTable("SaleItems");
+                });
+
+            modelBuilder.Entity("BillOra.Domain.Entities.SalePayment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<int?>("PaymentModeId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("SaleId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PaymentModeId");
+
+                    b.HasIndex("SaleId");
+
+                    b.ToTable("SalePayments");
                 });
 
             modelBuilder.Entity("BillOra.Domain.Entities.SalesReturn", b =>
@@ -2372,6 +2457,24 @@ namespace BillOra.Persistence.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("BillOra.Domain.Entities.CustomerPayment", b =>
+                {
+                    b.HasOne("BillOra.Domain.Entities.Customer", "Customer")
+                        .WithMany()
+                        .HasForeignKey("CustomerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BillOra.Domain.Entities.PaymentMode", "PaymentMode")
+                        .WithMany()
+                        .HasForeignKey("PaymentModeId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Customer");
+
+                    b.Navigation("PaymentMode");
+                });
+
             modelBuilder.Entity("BillOra.Domain.Entities.InventoryTransaction", b =>
                 {
                     b.HasOne("BillOra.Domain.Entities.Item", "Item")
@@ -2570,6 +2673,24 @@ namespace BillOra.Persistence.Migrations
                     b.Navigation("Sale");
                 });
 
+            modelBuilder.Entity("BillOra.Domain.Entities.SalePayment", b =>
+                {
+                    b.HasOne("BillOra.Domain.Entities.PaymentMode", "PaymentMode")
+                        .WithMany()
+                        .HasForeignKey("PaymentModeId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("BillOra.Domain.Entities.Sale", "Sale")
+                        .WithMany("Payments")
+                        .HasForeignKey("SaleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("PaymentMode");
+
+                    b.Navigation("Sale");
+                });
+
             modelBuilder.Entity("BillOra.Domain.Entities.SalesReturn", b =>
                 {
                     b.HasOne("BillOra.Domain.Entities.Customer", "Customer")
@@ -2759,6 +2880,8 @@ namespace BillOra.Persistence.Migrations
 
             modelBuilder.Entity("BillOra.Domain.Entities.Sale", b =>
                 {
+                    b.Navigation("Payments");
+
                     b.Navigation("SaleItems");
                 });
 

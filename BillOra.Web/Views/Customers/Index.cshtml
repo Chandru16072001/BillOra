@@ -51,7 +51,14 @@
                 <td class="text-end">₹@c.OutstandingAmount.ToString("N2")</td>
                 <td class="text-end">@c.LoyaltyPoints</td>
                 <td class="text-end"><a class="btn btn-sm btn-outline-secondary" href="/Customers/Edit/@c.Id">Edit</a></td>
-            </tr>
+            <td class="text-end">₹@c.OutstandingAmount.ToString("N2")</td>
+<td class="text-end">
+    @if (c.OutstandingAmount > 0)
+    {
+        <a class="btn btn-sm btn-outline-danger" href="/Customers/Outstanding/@c.Id">Collect Payment</a>
+    }
+</td>
+              </tr>
         }
         </tbody>
     </table>

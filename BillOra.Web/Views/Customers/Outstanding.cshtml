@@ -1,0 +1,99 @@
+@model Customer
+@{
+    ViewData["Title"] = "Outstanding — " + Model.Name;
+    var paymentModes = (IEnumerable<PaymentMode>)ViewBag.PaymentModes;
+    var history = (List<CustomerPayment>)ViewBag.PaymentHistory;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h3 class="mb-0">@Model.Name — Outstanding Balance</h3>
+    <a class="btn btn-outline-secondary btn-sm" href="/Customers">← Back to Customers</a>
+</div>
+
+@if (TempData["Success"] != null) { <div class="alert alert-success py-2">@TempData["Success"]</div> }
+@if (TempData["Error"] != null) { <div class="alert alert-danger py-2">@TempData["Error"]</div> }
+
+<div class="row g-3 mb-3">
+    <div class="col-md-4">
+        <div class="bo-card text-center">
+            <div class="bo-stat-label">Current Outstanding</div>
+            <div class="bo-stat-value @(Model.OutstandingAmount > 0 ? "text-danger" : "text-success")">₹@Model.OutstandingAmount.ToString("N2")</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="bo-card text-center">
+            <div class="bo-stat-label">Phone</div>
+            <div class="fw-semibold mt-2">@(Model.Phone ?? "-")</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="bo-card text-center">
+            <div class="bo-stat-label">Credit Limit</div>
+            <div class="fw-semibold mt-2">₹@Model.CreditLimit.ToString("N2")</div>
+        </div>
+    </div>
+</div>
+
+@if (Model.OutstandingAmount > 0)
+{
+    <div class="bo-card mb-4" style="max-width:520px;">
+        <h5 class="mb-3">Collect Payment</h5>
+        <form asp-action="CollectPayment" asp-route-id="@Model.Id" method="post">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label">Amount</label>
+                    <div class="input-group">
+                        <span class="input-group-text">₹</span>
+                        <input name="amount" type="number" step="0.01" min="0.01" max="@Model.OutstandingAmount" value="@Model.OutstandingAmount.ToString("F2")" class="form-control" required />
+                    </div>
+                    <div class="form-text">Full balance pre-filled — edit for a partial payment.</div>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Payment Mode</label>
+                    <select name="paymentModeId" class="form-select">
+                        @foreach (var p in paymentModes)
+                        {
+                            <option value="@p.Id">@p.Name</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-12">
+                    <label class="form-label">Notes (optional)</label>
+                    <input name="notes" class="form-control" placeholder="e.g. settled against invoice INV-..." />
+                </div>
+            </div>
+            <button class="btn btn-primary mt-3" type="submit"><i class="fa-solid fa-hand-holding-dollar"></i> Collect Payment</button>
+        </form>
+    </div>
+}
+else
+{
+    <div class="bo-card mb-4 text-center text-success">
+        <i class="fa-solid fa-circle-check"></i> No outstanding balance — fully settled.
+    </div>
+}
+
+<div class="bo-card">
+    <h5 class="mb-2">Payment History</h5>
+    @if (history.Count == 0)
+    {
+        <p class="text-muted small mb-0">No payments collected yet.</p>
+    }
+    else
+    {
+        <table class="table table-sm">
+            <thead><tr><th>Date</th><th>Amount</th><th>Mode</th><th>Notes</th></tr></thead>
+            <tbody>
+            @foreach (var p in history)
+            {
+                <tr>
+                    <td>@p.PaymentDate.ToLocalTime().ToString("dd MMM yyyy hh:mm tt")</td>
+                    <td class="text-success fw-semibold">₹@p.Amount.ToString("N2")</td>
+                    <td>@(p.PaymentMode?.Name ?? "-")</td>
+                    <td class="text-muted small">@p.Notes</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    }
+</div>

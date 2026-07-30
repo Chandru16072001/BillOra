@@ -1,12 +1,10 @@
 @model Sale
+@using BillOra.Domain.Enums
 @{
     Layout = null;
     var store = (Store)ViewBag.Store;
     var cfg = (InvoiceSettings)ViewBag.InvoiceSettings;
-}
-@inject BillOra.Application.Common.Interfaces.IBrandingService BrandingService
-@{
-    var branding = await BrandingService.GetAsync();
+    bool isDuplicate = ViewBag.IsDuplicate;
 }
 <!DOCTYPE html>
 <html>
@@ -14,7 +12,7 @@
     <meta charset="utf-8" />
     <title>@cfg.InvoiceHeading @Model.InvoiceNumber</title>
     <style>
-        body { font-family: 'Courier New', monospace; width: 300px; margin: 0 auto; font-size: 13px; }
+        body { font-family: 'Courier New', monospace; width: 300px; margin: 0 auto; font-size: 13px; position: relative; }
         h2, h3, h4 { text-align: center; margin: 4px 0; }
         img.logo { display: block; margin: 0 auto 4px; max-height: 50px; }
         table { width: 100%; border-collapse: collapse; margin-top: 8px; }
@@ -23,10 +21,18 @@
         hr { border-top: 1px dashed #000; }
         .gst-table td { font-size: 12px; }
         .qr { display: block; margin: 8px auto; }
+        .duplicate-badge {
+            text-align: center; border: 2px solid #b00; color: #b00; font-weight: bold;
+            padding: 3px; margin-bottom: 8px; letter-spacing: 1px;
+        }
         @@media print { .no-print { display: none; } }
     </style>
 </head>
 <body onload="window.print()">
+    @if (isDuplicate)
+    {
+        <div class="duplicate-badge">** DUPLICATE COPY **</div>
+    }
     @if (cfg.ShowStoreLogo && !string.IsNullOrEmpty(store.LogoPath))
     {
         <img class="logo" src="@store.LogoPath" />
@@ -54,25 +60,6 @@
     <hr />
     <p>
         Invoice: @Model.InvoiceNumber<br />
- @if (!string.IsNullOrEmpty(Model.OrderNumber))
-    {
-        <hr />
-        <p>
-            Order: @Model.OrderNumber (@Model.OrderType)<br />
-            @if (!string.IsNullOrEmpty(Model.TableNumber))
-            {
-                <text>Table: @Model.TableNumber<br /></text>
-            }
-            @if (!string.IsNullOrEmpty(Model.WaiterName))
-            {
-                <text>Waiter: @Model.WaiterName<br /></text>
-            }
-            @if (!string.IsNullOrEmpty(store.FssaiNumber))
-            {
-                <text>FSSAI: @store.FssaiNumber</text>
-            }
-        </p>
-    }
         Date: @Model.SaleDate.ToLocalTime().ToString("dd MMM yyyy hh:mm tt")<br />
         @if (cfg.ShowCustomerName)
         {
@@ -89,6 +76,14 @@
         @if (cfg.ShowCustomerGst && !string.IsNullOrEmpty(Model.Customer?.GstNumber))
         {
             <text>GSTIN: @Model.Customer.GstNumber<br /></text>
+        }
+        @if (!string.IsNullOrEmpty(Model.TableNumber))
+        {
+            <text>Table: @Model.TableNumber<br /></text>
+        }
+        @if (!string.IsNullOrEmpty(Model.WaiterName))
+        {
+            <text>Waiter: @Model.WaiterName<br /></text>
         }
     </p>
     <hr />
@@ -129,6 +124,26 @@
 
     <hr />
     <h4>Grand Total: ₹@Model.GrandTotal.ToString("N2")</h4>
+
+    @if (Model.Payments.Any())
+    {
+        <hr />
+        <table class="gst-table">
+            @foreach (var p in Model.Payments)
+            {
+                <tr><td>@(p.PaymentMode?.Name ?? "Payment")</td><td class="right">@p.Amount.ToString("N2")</td></tr>
+            }
+            @if (Model.AmountPaid < Model.GrandTotal)
+            {
+                <tr><td><strong>Balance Due</strong></td><td class="right"><strong>@((Model.GrandTotal - Model.AmountPaid).ToString("N2"))</strong></td></tr>
+            }
+        </table>
+    }
+    else if (Model.PaymentStatus == PaymentStatus.Unpaid)
+    {
+        <p style="text-align:center;"><strong>CREDIT SALE — Amount Due: ₹@Model.GrandTotal.ToString("N2")</strong></p>
+    }
+
     <hr />
 
     @if (cfg.ShowQrCode)
@@ -146,11 +161,9 @@
     {
         <p style="text-align:center;">@cfg.FooterMessage</p>
     }
-<p style="text-align:center; font-size:10px; color:#999; margin-top:10px;">
-    Powered by @branding.SoftwareName
-</p>
+
     <div class="no-print" style="text-align:center; margin-top:10px;">
-        <a href="/POS">Back to POS</a>
+        <a href="/POS">Back to POS</a> &nbsp;|&nbsp; <a href="/Sales/Details/@Model.Id">Invoice Options (Email / WhatsApp)</a>
     </div>
 </body>
 </html>
